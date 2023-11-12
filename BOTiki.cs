@@ -10,26 +10,25 @@ public class BOTiki : BasePlugin
 {
     public override string ModuleName => "BOTiki";
 
-    public override string ModuleVersion => "dev 0.0.1";
+    public override string ModuleVersion => "0.0.1";
 
     public override string ModuleAuthor => "jockii";
-
-    public override string ModuleDescription => "when player count up two, post CVAR 'bot_kick', bla..bla...bla... ";
 
     public override void Load(bool hotReload)
     {
         Console.WriteLine("----------------------------------------------------");
         Console.WriteLine($"Plugin: {ModuleName} ver:{ModuleVersion} by {ModuleAuthor} has been loaded =)");
-        Console.WriteLine($"Description: {ModuleDescription} .");
         Console.WriteLine("---------------------------------------------");
 
         Server.ExecuteCommand("sv_cheats true");
         Server.ExecuteCommand("bot_quota 1");
-        Server.ExecuteCommand("bot_quota_mode fill");
+        Server.ExecuteCommand("bot_quota_mode match");
         Server.ExecuteCommand("sv_cheats false");
     }
 
-    
+    const string BOT_ADD_CT = "bot_add_ct";
+    const string BOT_ADD_T = "bot_add_t";
+    const string BOT_KICK = "bot_kick";
 
     public static T GetEntityFromIndex<T>(int index) where T : CEntityInstance
     {
@@ -46,7 +45,7 @@ public class BOTiki : BasePlugin
         for (int i = 1; i <= Server.MaxPlayers; i++)
         {
             CCSPlayerController playerFromIndex = GetPlayerFromIndex(i);
-            if (playerFromIndex.IsValid && playerFromIndex.UserId != -1)  //&& !playerFromIndex.IsBot
+            if (playerFromIndex.IsValid && playerFromIndex.UserId != -1)
             {
                 list.Add(playerFromIndex);
             }
@@ -55,62 +54,56 @@ public class BOTiki : BasePlugin
         return list;
     }
 
+    public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
+    {
+        int teamToChange = teamName == CsTeam.Terrorist ? 3 : 2;
+        realPlayers.Find(player => player.TeamNum == teamToChange).ChangeTeam(teamName);
+    }
+
+    public void AddBotsByPlayersCount(int T, int CT)
+    {
+        if (T + CT == 1)
+        {
+            Server.ExecuteCommand("bot_quota_mode match");
+            Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
+        }
+        else if (T + CT == 3)
+        {
+            Server.ExecuteCommand("bot_quota_mode fill");
+            Server.ExecuteCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+        }
+    }
+
+    public void KickBotsByPlayersCount(int T, int CT)
+    {
+        if (T + CT == 2 || T + CT > 3)
+            Server.ExecuteCommand(BOT_KICK);
+    }
     public void Checker(List<CCSPlayerController> players)
     {
-        int playersCount = players.Count;
-        
+        bool isBotExists = players.Exists(player => player.IsBot);
+        List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
+
         int CT = 0;
         int T = 0;
-        bool isBotExists = false;
+    
+        realPlayers.ForEach(player =>
+        {
+            if (player.TeamNum == 2)
+                T++;
+            else if (player.TeamNum == 3)
+                CT++;
+        });
 
-        for (int i = 0; i < playersCount; i++)
-        {
-            var player = players[i];
-
-            if (!player.IsBot)
-            {
-                if (player.TeamNum == 2)
-                    T++;
-                else if (player.TeamNum == 3)
-                    CT++;
-            }
-            else
-                isBotExists = true;
-        }
-
-        if (T + CT == 1 && !isBotExists)
-        {
-            if (T > CT)
-             Server.ExecuteCommand("bot_add_ct");
-            else
-             Server.ExecuteCommand("bot_add_t");
-            
-        }
-        else if ((T + CT == 2  || T + CT > 3) && isBotExists)
-        {
-            Server.ExecuteCommand("bot_kick");
-            Server.PrintToChatAll("command: 'bot_kick' was executed");
-        }
-        else if (T + CT == 3 && !isBotExists)
-        {
-            if (T > CT)
-                Server.ExecuteCommand("bot_add_ct");
-            else
-                Server.ExecuteCommand("bot_add_t");
-        }
+        if (isBotExists)
+            KickBotsByPlayersCount(T, CT);
+        else
+            AddBotsByPlayersCount(T, CT);
 
         if (T > 1 && CT == 0)
-        {
-            var Tswap = players.Find(player => player.TeamNum == 2 && !player.IsBot);
-            Tswap.ChangeTeam(CsTeam.CounterTerrorist);
-        }
-          
-            
+            ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
         if (CT > 1 && T == 0)
-        {
-            var CTswap = players.Find(player => player.TeamNum == 3 && !player.IsBot);
-            CTswap.ChangeTeam(CsTeam.Terrorist);
-        }
+            ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
 
     }
 
