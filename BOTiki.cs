@@ -12,7 +12,7 @@ public class BOTiki : BasePlugin
 
     public override string ModuleVersion => "0.0.1";
 
-    public override string ModuleAuthor => "jockii";
+    public override string ModuleAuthor => "jockii, VoCs";
 
     public override void Load(bool hotReload)
     {
@@ -65,11 +65,13 @@ public class BOTiki : BasePlugin
         if (T + CT == 1)
         {
             Server.ExecuteCommand("bot_quota_mode match");
+            Server.ExecuteCommand("bot_join_after_player true");
             Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
         }
         else if (T + CT == 3)
         {
             Server.ExecuteCommand("bot_quota_mode fill");
+            Server.ExecuteCommand("bot_join_after_player true");
             Server.ExecuteCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
         }
     }
