@@ -5,6 +5,11 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BOTiki", "BOTiki.csproj", "{A3FE59B7-8A70-4F00-99EA-A9897F6A1D2B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6B8ED86C-2663-4A99-A313-C520922D0677}"
+	ProjectSection(SolutionItems) = preProject
+		BOTikiConfig.cs = BOTikiConfig.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
