@@ -40,6 +40,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     const string BOT_ADD_CT = "bot_add_ct";
     const string BOT_ADD_T = "bot_add_t";
     const string BOT_KICK = "bot_kick";
+    const string BOT_AUTO_VACATE = "bot_auto_vacate 1";
 
     public static T GetEntityFromIndex<T>(int index) where T : CEntityInstance
     {
@@ -50,20 +51,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
         return GetEntityFromIndex<CCSPlayerController>(index);
     }
 
-    public static List<CCSPlayerController> GetPlayers()
-    {
-        List<CCSPlayerController> list = new List<CCSPlayerController>();
-        for (int i = 1; i <= Server.MaxPlayers; i++)
-        {
-            CCSPlayerController playerFromIndex = GetPlayerFromIndex(i);
-            if (playerFromIndex.IsValid && playerFromIndex.UserId != -1)
-            {
-                list.Add(playerFromIndex);
-            }
-        }
-
-        return list;
-    }
+    List<CCSPlayerController> players = Utilities.GetPlayers();
 
     public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
     {
@@ -101,7 +89,8 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
                 //
                 Server.ExecuteCommand(BOT_KICK);
                 Server.ExecuteCommand($"bot_quota {_bot_count}");
-                Server.ExecuteCommand("bot_quota_mode fill"); break;
+                Server.ExecuteCommand("bot_quota_mode fill");
+                Server.ExecuteCommand(BOT_AUTO_VACATE); break;
             case "match":
                 // log
                 Server.PrintToChatAll("--- match case ---");/////////////
@@ -184,7 +173,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        Checker(GetPlayers());
+        Checker(players);
 
         return HookResult.Continue;
     }
@@ -192,7 +181,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        Checker(GetPlayers());
+        Checker(players);
 
         return HookResult.Continue;
     }
