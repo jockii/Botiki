@@ -8,7 +8,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
 {
     public override string ModuleName => "BOTiki";
 
-    public override string ModuleVersion => "0.2";
+    public override string ModuleVersion => "v0.2";
 
     public override string ModuleAuthor => "jockii, VoCs";
 
@@ -18,20 +18,10 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     private int _max_player_to_bot_kick = 0;
     public override void Load(bool hotReload)
     {
-        Console.WriteLine("----------------------------------------------------");
-        Console.WriteLine($"Plugin: {ModuleName} ver:{ModuleVersion} by {ModuleAuthor} has been loaded =)");
-        Console.WriteLine("---------------------------------------------");
-        /* --------- create a json config -----------
-        var configPath = Path.Join(ModuleDirectory, "Config.json");
-        if (!File.Exists(configPath))
-        {
-            var data = new Config() { BotMode = "balanced", bot_count = 10, max_player_to_bot_kick = 10 };
-            File.WriteAllText(configPath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
-            _config = data;
-        }
-        else _config = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath));
-        */
-        
+        Console.WriteLine("------------------------------------------------------------");
+        Console.WriteLine($"Plugin: {ModuleName} {ModuleVersion} by {ModuleAuthor} has been loaded =)");
+        Console.WriteLine("------------------------------------------------------------");
+
         Server.ExecuteCommand("sv_cheats true");
         Server.ExecuteCommand("bot_join_after_player true");
         Server.ExecuteCommand("bot_quota 1");
@@ -100,7 +90,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     }
     */
 
-    public void AddBotsByConfigMode(int T, int CT, string _BotMode, int _bot_count)
+    public void AddBotsByConfigMode(int T, int CT) // , string _BotMode, int _bot_count
     {
         switch (_BotMode)
         {
@@ -109,6 +99,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
                 Server.PrintToChatAll("--- fill case ---");/////////////
                 Console.WriteLine("--- fill case ---");/////////////////
                 //
+                Server.ExecuteCommand(BOT_KICK);
                 Server.ExecuteCommand($"bot_quota {_bot_count}");
                 Server.ExecuteCommand("bot_quota_mode fill"); break;
             case "match":
@@ -116,6 +107,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
                 Server.PrintToChatAll("--- match case ---");/////////////
                 Console.WriteLine("--- match case ---");////////////////
                 //
+                Server.ExecuteCommand(BOT_KICK);
                 Server.ExecuteCommand($"bot_quota 1");
                 Server.ExecuteCommand("bot_quota_mode match"); break;
             case "balanced":
@@ -125,12 +117,14 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
                 //
                 if (T + CT == 1)
                 {
+                    Server.ExecuteCommand(BOT_KICK);
                     Server.ExecuteCommand("bot_quota_mode match");
                     Server.ExecuteCommand("bot_join_after_player true");
                     Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
                 }
                 else if (T != CT  ) 
                 {
+                    Server.ExecuteCommand(BOT_KICK);
                     Server.ExecuteCommand("bot_quota_mode fill");
                     Server.ExecuteCommand("bot_join_after_player true");
                     Server.ExecuteCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
@@ -146,7 +140,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
         }
     }
 
-    public void KickBotsByPlayersCount(int T, int CT, int _max_player_to_bot_kick)
+    public void KickBotsByPlayersCount(int T, int CT) // , int _max_player_to_bot_kick
     {
         /*
          *  ----------- backup -----------
@@ -176,9 +170,9 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
         });
 
         if (isBotExists)
-            KickBotsByPlayersCount(T, CT, _max_player_to_bot_kick);
+            KickBotsByPlayersCount(T, CT); // , _max_player_to_bot_kick
         else
-            AddBotsByConfigMode(T, CT, _BotMode, _bot_count);
+            AddBotsByConfigMode(T, CT); // , _BotMode, _bot_count
 
         if (T > 1 && CT == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
