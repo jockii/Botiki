@@ -2,6 +2,7 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Utils;
+using System.Collections.Generic;
 
 namespace BOTiki;
 public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
@@ -42,15 +43,6 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     const string BOT_KICK = "bot_kick";
     const string BOT_AUTO_VACATE = "bot_auto_vacate 1";
 
-    public static T GetEntityFromIndex<T>(int index) where T : CEntityInstance
-    {
-        return (T)Activator.CreateInstance(typeof(T), NativeAPI.GetEntityFromIndex(index));
-    }
-    public static CCSPlayerController GetPlayerFromIndex(int index)
-    {
-        return GetEntityFromIndex<CCSPlayerController>(index);
-    }
-
     List<CCSPlayerController> players = Utilities.GetPlayers();
 
     public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
@@ -59,89 +51,51 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
         realPlayers.Find(player => player.TeamNum == teamToChange).ChangeTeam(teamName);
     }
 
-    /*    ------ backup --------
-         
-    public void AddBotsByPlayersCount(int T, int CT)
+    public void AddBotsByConfigMode(int T, int CT, bool isBotExists) // , string _BotMode, int _bot_count
     {
-        if (T + CT == 1)
+        if (isBotExists && T + CT >= _max_player_to_bot_kick)
+            Server.ExecuteCommand(BOT_KICK);
+        else
         {
-            Server.ExecuteCommand("bot_quota_mode match");
-            Server.ExecuteCommand("bot_join_after_player true");
-            Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
-        }
-        else if (T + CT == 3)
-        {
-            Server.ExecuteCommand("bot_quota_mode fill");
-            Server.ExecuteCommand("bot_join_after_player true");
-            Server.ExecuteCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
-        }
-    }
-    */
-
-    public void AddBotsByConfigMode(int T, int CT) // , string _BotMode, int _bot_count
-    {
-        switch (_BotMode)
-        {
-            case "fill":
-                // log
-                Server.PrintToChatAll("--- fill case ---");/////////////
-                Console.WriteLine("--- fill case ---");/////////////////
-                //
-                Server.ExecuteCommand(BOT_KICK);
-                Server.ExecuteCommand($"bot_quota {_bot_count}");
-                Server.ExecuteCommand("bot_quota_mode fill");
-                Server.ExecuteCommand(BOT_AUTO_VACATE); break;
-            case "match":
-                // log
-                Server.PrintToChatAll("--- match case ---");/////////////
-                Console.WriteLine("--- match case ---");////////////////
-                //
-                Server.ExecuteCommand(BOT_KICK);
-                Server.ExecuteCommand($"bot_quota 1");
-                Server.ExecuteCommand("bot_quota_mode match"); break;
-            case "balanced":
-                // log
-                Server.PrintToChatAll("--- balanced case ---");///////////////
-                Console.WriteLine("--- balanced case ---");//////////////////
-                //
-                if (T + CT == 1)
-                {
+            switch (_BotMode)
+            {
+                case "fill":
                     Server.ExecuteCommand(BOT_KICK);
-                    Server.ExecuteCommand("bot_quota_mode match");
-                    Server.ExecuteCommand("bot_join_after_player true");
-                    Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
-                }
-                else if (T != CT  ) 
-                {
-                    Server.ExecuteCommand(BOT_KICK);
+                    Server.ExecuteCommand($"bot_quota {_bot_count}");
                     Server.ExecuteCommand("bot_quota_mode fill");
-                    Server.ExecuteCommand("bot_join_after_player true");
-                    Server.ExecuteCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
-                } break;
-            default:
-                Console.WriteLine("------------------------------------------------(");
-                Console.WriteLine("'switch' not working =(");
-                Console.WriteLine("'switch' not working =(");
-                Console.WriteLine("'switch' not working =(");
-                Console.WriteLine("'switch' not working =(");
-                Console.WriteLine("------------------------------------------------(");
-                break;
+                    Server.ExecuteCommand(BOT_AUTO_VACATE); break;
+                case "match":
+                    Server.ExecuteCommand(BOT_KICK);
+                    Server.ExecuteCommand($"bot_quota 1");
+                    Server.ExecuteCommand("bot_quota_mode match"); break;
+                case "balanced":
+                    if (T + CT == 1)
+                    {
+                        Server.ExecuteCommand(BOT_KICK);
+                        Server.ExecuteCommand("bot_quota_mode match");
+                        Server.ExecuteCommand("bot_join_after_player true");
+                        Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
+                    }
+                    else if (T != CT)
+                    {
+                        Server.ExecuteCommand(BOT_KICK);
+                        Server.ExecuteCommand("bot_quota_mode fill");
+                        Server.ExecuteCommand("bot_join_after_player true");
+                        Server.ExecuteCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+                    }
+                    break;
+                default:
+                    Console.WriteLine("------------------------------------------------(");
+                    Console.WriteLine("'switch' not working =(");
+                    Console.WriteLine("'switch' not working =(");
+                    Console.WriteLine("'switch' not working =(");
+                    Console.WriteLine("'switch' not working =(");
+                    Console.WriteLine("------------------------------------------------(");
+                    break;
+            }
         }
     }
 
-    public void KickBotsByPlayersCount(int T, int CT) // , int _max_player_to_bot_kick
-    {
-        /*
-         *  ----------- backup -----------
-            if (T + CT == 2 || T + CT > 3) 
-            Server.ExecuteCommand(BOT_KICK);
-         */
-
-        if (T == CT)
-            Server.ExecuteCommand(BOT_KICK);
-        else if (T + CT == _max_player_to_bot_kick)
-            Server.ExecuteCommand(BOT_KICK);
-    }
     public void Checker(List<CCSPlayerController> players)
     {
         bool isBotExists = players.Exists(player => player.IsBot);
@@ -158,10 +112,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
                 CT++;
         });
 
-        if (isBotExists)
-            KickBotsByPlayersCount(T, CT); // , _max_player_to_bot_kick
-        else
-            AddBotsByConfigMode(T, CT); // , _BotMode, _bot_count
+        AddBotsByConfigMode(T, CT, isBotExists); // , _BotMode, _bot_count
 
         if (T > 1 && CT == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
@@ -173,6 +124,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
+        List<CCSPlayerController> players = Utilities.GetPlayers();
         Checker(players);
 
         return HookResult.Continue;
@@ -181,7 +133,21 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
+        List<CCSPlayerController> players = Utilities.GetPlayers();
         Checker(players);
+
+        return HookResult.Continue;
+    }
+    [GameEventHandler]
+    public HookResult OnPlayerTeamChange(EventPlayerTeam @event, GameEventInfo info)
+    {  
+        List<CCSPlayerController> alivePlayers = Utilities.GetPlayers().FindAll(player => !player.IsBot && player.PawnIsAlive);
+        if (alivePlayers.Count < 2)
+        {
+            Server.ExecuteCommand("sv_cheats true");
+            Server.ExecuteCommand("endround");
+            Server.ExecuteCommand("sv_cheats false");
+        }
 
         return HookResult.Continue;
     }
