@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using CounterStrikeSharp.API;
+﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Utils;
@@ -131,7 +129,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
                     Server.ExecuteCommand("bot_join_after_player true");
                     Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
                 }
-                else if (T + CT == 3 ) // (T + CT) % 2
+                else if (T != CT  ) 
                 {
                     Server.ExecuteCommand("bot_quota_mode fill");
                     Server.ExecuteCommand("bot_join_after_player true");
