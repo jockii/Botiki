@@ -139,7 +139,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
         return HookResult.Continue;
     }
     [GameEventHandler]
-    public HookResult OnPlayerTeamChange(EventPlayerTeam @event, GameEventInfo info)
+    public HookResult OnPlayerTeamChange(EventSwitchTeam @event, GameEventInfo info)
     {  
         List<CCSPlayerController> alivePlayers = Utilities.GetPlayers().FindAll(player => !player.IsBot && player.PawnIsAlive);
         if (alivePlayers.Count < 2)
