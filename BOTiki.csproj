@@ -9,7 +9,16 @@
 
   <ItemGroup>
     <Reference Include="CounterStrikeSharp.API">
-      <HintPath>..\counterstrikesharp-build-api-12c54cd\net7.0\CounterStrikeSharp.API.dll</HintPath>
+      <HintPath>current_api\CounterStrikeSharp.API.dll</HintPath>
+    </Reference>
+    <Reference Include="McMaster.NETCore.Plugins">
+      <HintPath>current_api\McMaster.NETCore.Plugins.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.PlatformAbstractions">
+      <HintPath>current_api\Microsoft.DotNet.PlatformAbstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyModel">
+      <HintPath>current_api\Microsoft.Extensions.DependencyModel.dll</HintPath>
     </Reference>
   </ItemGroup>
 

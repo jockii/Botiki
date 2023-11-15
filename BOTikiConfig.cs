@@ -6,7 +6,7 @@ namespace BOTiki;
 public class BOTikiConfig : BasePluginConfig
 {
     [JsonPropertyName("BotMode")]
-    public string BotMode { get; set; } = "balanced"; // fill, match, balanced
+    public string BotMode { get; set; } = "normal"; // normal, balanced
 
     [JsonPropertyName("bot_count")]
     public int bot_count { get; set; } = 1; // used only fill mode
