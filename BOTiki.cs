@@ -8,25 +8,20 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
 {
     public override string ModuleName => "BOTiki";
 
-    public override string ModuleVersion => "v0.3";
+    public override string ModuleVersion => "v0.2";
 
     public override string ModuleAuthor => "jockii, VoCs";
 
     public BOTikiConfig Config { get; set; } = new();
     private string _BotMode = "";
     private int _bot_count = 0;
-    private int _max_player_to_bot_kick = 0;
+    private int _player_count_to_bot_kick = 0;
+
     public override void Load(bool hotReload)
     {
         Console.WriteLine("------------------------------------------------------------");
         Console.WriteLine($"Plugin: {ModuleName} {ModuleVersion} by {ModuleAuthor} has been loaded =)");
         Console.WriteLine("------------------------------------------------------------");
-
-        Server.ExecuteCommand("sv_cheats true");
-        Server.ExecuteCommand("bot_join_after_player true");
-        Server.ExecuteCommand("bot_quota 0");
-        Server.ExecuteCommand("bot_quota_mode normal");
-        Server.ExecuteCommand("sv_cheats false");
     }
 
     public void OnConfigParsed(BOTikiConfig config)
@@ -34,7 +29,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
         this.Config = config;
         _BotMode = config.BotMode;
         _bot_count = config.bot_count;
-        _max_player_to_bot_kick = config.max_player_to_bot_kick;
+        _player_count_to_bot_kick = config.player_count_to_bot_kick;
     }
 
     const string BOT_ADD_CT = "bot_add_ct";
@@ -51,7 +46,7 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
 
     public void AddBotsByConfigMode(int T, int CT, bool isBotExists)
     {
-        if (isBotExists && T + CT >= _max_player_to_bot_kick)
+        if (isBotExists && T + CT >= _player_count_to_bot_kick)
             Server.ExecuteCommand(BOT_KICK);
         else
         {
@@ -59,20 +54,20 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
             {
                 case "normal":
                     Server.ExecuteCommand(BOT_KICK);
+                    Server.ExecuteCommand("bot_quota_mode normal");
                     Server.ExecuteCommand($"bot_quota {_bot_count}");
-                    Server.ExecuteCommand("bot_quota_mode normal"); break;
+                    break;
                 case "balanced":
+                    Server.ExecuteCommand(BOT_KICK);
                     if (T + CT == 1)
                     {
-                        Server.ExecuteCommand(BOT_KICK);
                         Server.ExecuteCommand("bot_quota_mode match");
                         Server.ExecuteCommand("bot_quota 1");
                         Server.ExecuteCommand("bot_join_after_player true");
                         Server.ExecuteCommand(T == 1 ? BOT_ADD_CT : BOT_ADD_T);
                     }
-                    else if (T != CT && !isBotExists)
+                    else if (T != CT)
                     {
-                        Server.ExecuteCommand(BOT_KICK);
                         Server.ExecuteCommand("bot_quota_mode normal");
                         Server.ExecuteCommand("bot_quota 1");
                         Server.ExecuteCommand("bot_join_after_player true");
@@ -127,19 +122,6 @@ public class BOTiki : BasePlugin, IPluginConfig<BOTikiConfig>
     {
         List<CCSPlayerController> players = Utilities.GetPlayers();
         Checker(players);
-
-        return HookResult.Continue;
-    }
-    [GameEventHandler]
-    public HookResult OnPlayerSwitchTeam(EventSwitchTeam @event, GameEventInfo info, bool isBotExists)
-    {  
-        List<CCSPlayerController> realPlayers = Utilities.GetPlayers().FindAll(player => !player.IsBot && player.IsValid);
-        if (realPlayers.Count == 1)
-        {
-            Server.ExecuteCommand("sv_cheats true");
-            Server.ExecuteCommand("endround");
-            Server.ExecuteCommand("sv_cheats false");
-        }
 
         return HookResult.Continue;
     }
