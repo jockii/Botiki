@@ -7,6 +7,6 @@ This plugin adds bots to your server depending on the number of players, current
 * when there are more than three players, bots are removed altogether
 
 -------------------------------------------------------------------------------------------------------------------
-* NOTE: You may need to remove "bot_quota" and "bot_quota_mode" from your CFG, but not sure :/ 
+* NOTE: You may need to remove "bot_quota" and "bot_quota_mode" from your server CFG, but not sure :/ 
 * ATTENTION: maybe the plugin will have some bugs, this is the first work                      
 --------------------------------------------------------------------------------------------------------------------
