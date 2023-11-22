@@ -30,30 +30,6 @@ public class BOTiki : BasePlugin
     const string BOT_ADD_T = "bot_add_t";
     const string BOT_KICK = "bot_kick";
 
-    public static T GetEntityFromIndex<T>(int index) where T : CEntityInstance
-    {
-        return (T)Activator.CreateInstance(typeof(T), NativeAPI.GetEntityFromIndex(index));
-    }
-    public static CCSPlayerController GetPlayerFromIndex(int index)
-    {
-        return GetEntityFromIndex<CCSPlayerController>(index);
-    }
-
-    public static List<CCSPlayerController> GetPlayers()
-    {
-        List<CCSPlayerController> list = new List<CCSPlayerController>();
-        for (int i = 1; i <= Server.MaxPlayers; i++)
-        {
-            CCSPlayerController playerFromIndex = GetPlayerFromIndex(i);
-            if (playerFromIndex.IsValid && playerFromIndex.UserId != -1)
-            {
-                list.Add(playerFromIndex);
-            }
-        }
-
-        return list;
-    }
-
     public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
     {
         int teamToChange = teamName == CsTeam.Terrorist ? 3 : 2;
@@ -107,12 +83,13 @@ public class BOTiki : BasePlugin
         if (CT > 1 && T == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
 
+        
     }
 
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        Checker(GetPlayers());
+        Checker(Utilities.GetPlayers());
 
         return HookResult.Continue;
     }
@@ -120,7 +97,7 @@ public class BOTiki : BasePlugin
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        Checker(GetPlayers());
+        Checker(Utilities.GetPlayers());
 
         return HookResult.Continue;
     }
