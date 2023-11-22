@@ -2,13 +2,16 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Botiki;
 public class BotikiConfig : BasePluginConfig
 {
-    [JsonPropertyName("admin_ID64")] public UInt64 admin_ID64 { get; set; } = 71231312843331731; // List !!!
+    [JsonPropertyName("admin_ID64")] public UInt64 admin_ID64 { get; set; } = 76561199414091271; // need List !!!
     [JsonPropertyName("add_bot_Mode")] public string add_bot_Mode { get; set; } = "off";
     [JsonPropertyName("bot_Count")] public int bot_Count { get; set; } = 1;
     [JsonPropertyName("bot_HP")] public int bot_HP { get; set; } = 100;
@@ -48,6 +51,9 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public const string BOT_ADD_CT = "bot_add_ct";              //
     public const string BOT_ADD_T = "bot_add_t";               //      <--   const 
     public const string BOT_KICK = "bot_kick";                //
+    public const int MIN_BOT_HP = 1;                         //
+    public const int STANDART_BOT_HP = 100;                 //
+    public const int MAX_BOT_HP = 9999999;                 //
 
     public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
     {
@@ -103,11 +109,48 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
     }
 
+    [ConsoleCommand("css_setbothp")]
+    public void OnCommandSetBotHp(CCSPlayerController? controller, CommandInfo command, BotikiConfig config)
+    {
+        if (controller == null) return;
+        if (controller.SteamID == _admin_ID64) // only jackson tougher. need List!!!
+        {
+            if (Regex.IsMatch(command.GetArg(1), @"^\d+$"))
+            {
+                config.bot_HP = int.Parse(command.GetArg(1));
+                _bot_HP = config.bot_HP;
+                controller.PrintToChat($" {ChatColors.Red}[Setbothp]{ChatColors.Olive}config reload... {ChatColors.Green}OK!");
+                controller.PrintToChat($"New Bot HP: {ChatColors.Green}{_bot_HP}");
+            }
+            else
+            {
+                config.bot_HP = STANDART_BOT_HP;
+                _bot_HP = config.bot_HP;
+                controller.PrintToChat($" {ChatColors.Red}Incorrect value! Please input correct number");
+            }
+        }
+        else
+            controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
+    }
+    public void SetBotHp(List<CCSPlayerController> playersList, int _bot_HP)
+    {
+        playersList.ForEach(player =>
+        {
+            if (player.IsBot)
+            {
+                if (_bot_HP >= MIN_BOT_HP && _bot_HP <= MAX_BOT_HP)
+                    player.Pawn.Value.Health = _bot_HP;
+                else if (_bot_HP < MIN_BOT_HP || _bot_HP > MAX_BOT_HP)
+                    player.Pawn.Value.Health = STANDART_BOT_HP;
+            }
+        });
+    }
+
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
         Checker(Utilities.GetPlayers());
-
+        SetBotHp(Utilities.GetPlayers(), _bot_HP);
         return HookResult.Continue;
     }
 
@@ -119,5 +162,3 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         return HookResult.Continue;
     }
 }
-
-
