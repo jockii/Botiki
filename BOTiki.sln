@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BOTiki", "BOTiki.csproj", "{A3FE59B7-8A70-4F00-99EA-A9897F6A1D2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Botiki", "Botiki.csproj", "{A3FE59B7-8A70-4F00-99EA-A9897F6A1D2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
