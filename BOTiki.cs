@@ -1,39 +1,58 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
-using CounterStrikeSharp.API.Modules.Cvars;
-using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
+using System.Text.Json.Serialization;
 
-namespace BOTiki;
-public class BOTiki : BasePlugin
+namespace Botiki;
+public class BotikiConfig : BasePluginConfig
 {
-    public override string ModuleName => "BOTiki";
+    [JsonPropertyName("admin_ID64")] public UInt64 admin_ID64 { get; set; } = 71231312843331731; // List !!!
+    [JsonPropertyName("add_bot_Mode")] public string add_bot_Mode { get; set; } = "off";
+    [JsonPropertyName("bot_Count")] public int bot_Count { get; set; } = 1;
+    [JsonPropertyName("bot_HP")] public int bot_HP { get; set; } = 100;
+    [JsonPropertyName("playerCount_botKick")] public int playerCount_botKick { get; set; } = 10;
+}
 
-    public override string ModuleVersion => "0.0.1";
 
-    public override string ModuleAuthor => "jockii, VoCs";
+[MinimumApiVersion(65)]
+public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
+{
+    public override string ModuleName => "|Botiki|";
 
+    public override string ModuleVersion => "|v1.0.0|";
+
+    public override string ModuleAuthor => "|jackson tougher|";
+    public BotikiConfig Config { get; set; }
+
+    private UInt64 _admin_ID64;                             //
+    private string? _add_bot_Mode;                         //
+    private int _bot_Count;                               //      <-- variables
+    private int _bot_HP;                                 //
+    private int _playerCount_botKick;                   //
+    public void OnConfigParsed(BotikiConfig config)
+    {
+        Config = config;
+        _admin_ID64 = config.admin_ID64;
+        _add_bot_Mode = config.add_bot_Mode;
+        _bot_Count = config.bot_Count;
+        _bot_HP = config.bot_HP;
+        _playerCount_botKick = config.playerCount_botKick;
+    }
     public override void Load(bool hotReload)
     {
-        Console.WriteLine("----------------------------------------------------");
         Console.WriteLine($"Plugin: {ModuleName} ver:{ModuleVersion} by {ModuleAuthor} has been loaded =)");
-        Console.WriteLine("---------------------------------------------");
-
-        Server.ExecuteCommand("sv_cheats true");
-        Server.ExecuteCommand("bot_quota 1");
-        Server.ExecuteCommand("bot_quota_mode match");
-        Server.ExecuteCommand("sv_cheats false");
     }
 
-    const string BOT_ADD_CT = "bot_add_ct";
-    const string BOT_ADD_T = "bot_add_t";
-    const string BOT_KICK = "bot_kick";
+    public const string BOT_ADD_CT = "bot_add_ct";              //
+    public const string BOT_ADD_T = "bot_add_t";               //      <--   const 
+    public const string BOT_KICK = "bot_kick";                //
 
     public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
     {
         int teamToChange = teamName == CsTeam.Terrorist ? 3 : 2;
-        realPlayers.Find(player => player.TeamNum == teamToChange).ChangeTeam(teamName);
+        realPlayers.Find(player => player.TeamNum == teamToChange)?.ChangeTeam(teamName);
     }
 
     public void AddBotsByPlayersCount(int T, int CT)
@@ -64,7 +83,7 @@ public class BOTiki : BasePlugin
 
         int CT = 0;
         int T = 0;
-    
+
         realPlayers.ForEach(player =>
         {
             if (player.TeamNum == 2)
@@ -82,8 +101,6 @@ public class BOTiki : BasePlugin
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
         if (CT > 1 && T == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
-
-        
     }
 
     [GameEventHandler]
@@ -102,3 +119,5 @@ public class BOTiki : BasePlugin
         return HookResult.Continue;
     }
 }
+
+
