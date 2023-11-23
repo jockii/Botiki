@@ -1,12 +1,11 @@
 # BOTiki 
 -------------------------------------------------------------------------------------------------------------------
-This plugin adds bots to your server depending on the number of players, currently the plugin scheme is as follows:
-* when there is one player, the plugin adds a bot
-* when there are two players, the bot kicks and, if necessary, equalizes the players (1 T and 1 CT)
-* when there are three players, the bot adds to the team where there is one player
-* when there are more than three players, bots are removed altogether
+The plugin adds bots and currently works as a "balance" mode, that is, if T = 2 and CT = 1, then a bot will be added to the CT command.
+* You can specify in the config the number of real players playerCount_botKick value after which the bots will leave.
+* You can also install the HP Bot in the config, which will be accepted every time the server is started (server restart is required), or you can install the HP Bot in the game !setbothp N
+* Add yourself as an admin so that no one else has access to the commands (admin_ID64)
 
 -------------------------------------------------------------------------------------------------------------------
 * NOTE: You may need to remove "bot_quota" and "bot_quota_mode" from your server CFG, but not sure :/ 
-* ATTENTION: maybe the plugin will have some bugs, this is the first work                      
+* ATTENTION: maybe the plugin will have some bugs, pls send me ERRORS                     
 --------------------------------------------------------------------------------------------------------------------
