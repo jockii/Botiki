@@ -65,7 +65,10 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public void AddBotsByPlayersCount(int T, int CT)
     {
         if ((T + CT) % 2 != 0)
+        {
+            SendConsoleCommand(BOT_KICK);
             SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+        }
     }
 
     public void KickBotsByPlayersCount(int T, int CT, int SPEC, bool IsBotExist)
@@ -74,13 +77,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             SendConsoleCommand(BOT_KICK);
         else if (T + CT >= Config.playerCount_botKick)
             SendConsoleCommand(BOT_KICK);
-        else if ((T + CT) % 2 == 0 && IsBotExist)
-            SendConsoleCommand(BOT_KICK);
         else if (T + CT == 0 && SPEC >= 0)
-            SendConsoleCommand(BOT_KICK);
-        else if (T - CT >= 2 || CT - T >= 2 && IsBotExist)
-            SendConsoleCommand(BOT_KICK);
-        else if (T - CT >= 2 || CT - T >= 2 && !IsBotExist)
             SendConsoleCommand(BOT_KICK);
         else if (T + CT == 0)
             SendConsoleCommand(BOT_KICK);
@@ -103,7 +100,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 CT++;
         });
 
-        return (T, CT, SPEC, players.Exists(player => player.IsBot), realPlayers);
+        return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), realPlayers);
     }
     public void Checker(List<CCSPlayerController> players)
     {
@@ -176,7 +173,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     {
         playersList.ForEach(player =>
         {
-            if (player.IsBot)
+            if (player.IsValid && player.IsBot && !player.IsHLTV)
             {
                 if (Config.bot_HP >= MIN_BOT_HP && Config.bot_HP <= MAX_BOT_HP)
                     player.Pawn.Value.Health = Config.bot_HP;
@@ -189,7 +186,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        Checker(Utilities.GetPlayers());
+        //Checker(Utilities.GetPlayers());
         SetBotHp(Utilities.GetPlayers());
         return HookResult.Continue;
     }
@@ -197,10 +194,10 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        Server.PrintToChatAll("=== OnRoundEnd ===");
+       // Server.PrintToChatAll("=== OnRoundEnd ===");
         (int T, int CT, int SPEC, bool IsBotExists, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-        Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
-        Server.PrintToChatAll("=== ==== ==== ===");
+        //Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
+       // Server.PrintToChatAll("=== ==== ==== ===");
         Checker(Utilities.GetPlayers());
         
         return HookResult.Continue;
@@ -214,8 +211,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             IsNeedKick = false;
         } 
         (int T, int CT, int SPEC, bool IsBotExists, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-        Server.PrintToChatAll("=== OnSwichTeam ===");
-        Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
+       // Server.PrintToChatAll("=== OnSwichTeam ===");
+       // Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
         
         if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
         {
@@ -224,8 +221,15 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             SendConsoleCommand("endround");
             SendConsoleCommand("sv_cheats false");
         }
+
+        if (T > 1 && CT == 0 || CT > 1 && T == 0)
+        {
+            SendConsoleCommand("sv_cheats true");
+            SendConsoleCommand("endround");
+            SendConsoleCommand("sv_cheats false");
+        }
         //KickBotsByPlayersCount(T, CT, SPEC, IsBotExists);
-        Server.PrintToChatAll("=== ==== ==== ===");
+       // Server.PrintToChatAll("=== ==== ==== ===");
         return HookResult.Continue;
     }
 }
