@@ -50,7 +50,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public const int MIN_BOT_HP = 1;                                   //
     public const int STANDART_BOT_HP = 100;                           //
     public const int MAX_BOT_HP = 9999999;                           //
-    public bool IsNeedKick = true;
+    public bool IsNeedKick = true;                                  //
 
     public void SendConsoleCommand(string msg)
     {
@@ -71,7 +71,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         }
     }
 
-    public void KickBotsByPlayersCount(int T, int CT, int SPEC, bool IsBotExist)
+    public void KickBotsByPlayersCount(int T, int CT, int SPEC)
     {
         if ((T + CT) % 2 == 0)
             SendConsoleCommand(BOT_KICK);
@@ -82,13 +82,14 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         else if (T + CT == 0)
             SendConsoleCommand(BOT_KICK);
     }
-    (int T, int CT, int SPEC, bool IsBotExists, List<CCSPlayerController> realPlayers) GetPlayersCount(List<CCSPlayerController> players)
+    (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) GetPlayersCount(List<CCSPlayerController> players)
     {
         List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
 
         int CT = 0;
         int T = 0;
         int SPEC = 0;
+        int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
 
         realPlayers.ForEach(player =>
         {
@@ -100,20 +101,21 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 CT++;
         });
 
-        return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), realPlayers);
+        return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, realPlayers);
     }
     public void Checker(List<CCSPlayerController> players)
     {
-        (int T, int CT, int SPEC, bool IsBotExists, List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
-        if (IsBotExists)
-            KickBotsByPlayersCount(T, CT, SPEC, IsBotExists);
-        else
-            AddBotsByPlayersCount(T, CT);
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam , List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
 
         if (T > 1 && CT == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.CounterTerrorist);
         if (CT > 1 && T == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
+
+        if (IsBotExists)
+            KickBotsByPlayersCount(T, CT, SPEC);
+        else
+            AddBotsByPlayersCount(T, CT);
     }
 
     [ConsoleCommand("css_setbothp")]
@@ -195,7 +197,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
        // Server.PrintToChatAll("=== OnRoundEnd ===");
-        (int T, int CT, int SPEC, bool IsBotExists, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
         //Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
        // Server.PrintToChatAll("=== ==== ==== ===");
         Checker(Utilities.GetPlayers());
@@ -210,7 +212,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             SendConsoleCommand(BOT_KICK);
             IsNeedKick = false;
         } 
-        (int T, int CT, int SPEC, bool IsBotExists, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
        // Server.PrintToChatAll("=== OnSwichTeam ===");
        // Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
         
@@ -222,14 +224,23 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             SendConsoleCommand("sv_cheats false");
         }
 
-        if (T > 1 && CT == 0 || CT > 1 && T == 0)
+        if (T == 0 || CT == 0)
         {
             SendConsoleCommand("sv_cheats true");
             SendConsoleCommand("endround");
             SendConsoleCommand("sv_cheats false");
         }
-        //KickBotsByPlayersCount(T, CT, SPEC, IsBotExists);
-       // Server.PrintToChatAll("=== ==== ==== ===");
-        return HookResult.Continue;
+
+        if (IsBotExists && T > CT && botTeam == 2)
+        {
+            Utilities.GetPlayers().Find( player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.CounterTerrorist);
+        }
+        else if (IsBotExists && CT > T && botTeam == 3)
+        {
+            Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.Terrorist);
+        }
+            //KickBotsByPlayersCount(T, CT, SPEC, IsBotExists);
+            // Server.PrintToChatAll("=== ==== ==== ===");
+            return HookResult.Continue;
     }
 }
