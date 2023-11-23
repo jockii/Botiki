@@ -13,8 +13,8 @@ namespace Botiki;
 public class BotikiConfig : BasePluginConfig
 {
     [JsonPropertyName("admin_ID64")] public ulong admin_ID64 { get; set; } = 76561199414091272; // need List !!!
-   // [JsonPropertyName("add_bot_Mode")] public string add_bot_Mode { get; set; } = "off";
-   // [JsonPropertyName("bot_Count")] public int bot_Count { get; set; } = 1;
+    // [JsonPropertyName("add_bot_Mode")] public string add_bot_Mode { get; set; } = "off";
+    // [JsonPropertyName("bot_Count")] public int bot_Count { get; set; } = 1;
     [JsonPropertyName("bot_HP")] public int bot_HP { get; set; } = 100;
     [JsonPropertyName("playerCount_botKick")] public int playerCount_botKick { get; set; } = 10;
 }
@@ -105,7 +105,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     }
     public void Checker(List<CCSPlayerController> players)
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam , List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
 
         if (T > 1 && CT == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.CounterTerrorist);
@@ -119,10 +119,10 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     }
 
     [ConsoleCommand("css_setbothp")]
-    public void OnCommandSetBotHp(CCSPlayerController? controller, CommandInfo command)  
+    public void OnCommandSetBotHp(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (controller.SteamID == Config.admin_ID64) // only jackson tougher. need List!!!
+        if (controller.SteamID == Config.admin_ID64)
         {
             if (Regex.IsMatch(command.GetArg(1), @"^\d+$"))
             {
@@ -155,22 +155,22 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}Bot`s was kicked... {ChatColors.Green}OK!");
         }
     }
-    [ConsoleCommand("css_botiki_off")]
-    public void OnCommandBotikiOff(CCSPlayerController? controller, CommandInfo command)
-    {
-        if (controller == null) return;
-        if (controller.SteamID == Config.admin_ID64) // only jackson tougher. need List!!!
-        {
-            controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Green}Plugin was unloaded... OK!");
-            SendConsoleCommand("css_plugins stop Botiki");
-        }
-    }
-    [ConsoleCommand("css_botiki_reload")]
-    public void OnBotikiConfigReload(CCSPlayerController? controller, CommandInfo command)
-    {
-        if (controller == null) return;
-        if (controller.SteamID == Config.admin_ID64) return;
-    }
+    //[ConsoleCommand("css_botiki_off")]
+    //public void OnCommandBotikiOff(CCSPlayerController? controller, CommandInfo command)
+    //{
+    //    if (controller == null) return;
+    //    if (controller.SteamID == Config.admin_ID64) // only jackson tougher. need List!!!
+    //    {
+    //        controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Green}Plugin was unloaded... OK!");
+    //        SendConsoleCommand("css_plugins stop Botiki");
+    //    }
+    //}
+    //[ConsoleCommand("css_botiki_reload")]
+    //public void OnBotikiConfigReload(CCSPlayerController? controller, CommandInfo command)
+    //{
+    //    if (controller == null) return;
+    //    if (controller.SteamID == Config.admin_ID64) return;
+    //}
     public void SetBotHp(List<CCSPlayerController> playersList)
     {
         playersList.ForEach(player =>
@@ -196,12 +196,12 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-       // Server.PrintToChatAll("=== OnRoundEnd ===");
+        // Server.PrintToChatAll("=== OnRoundEnd ===");
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
         //Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
-       // Server.PrintToChatAll("=== ==== ==== ===");
+        // Server.PrintToChatAll("=== ==== ==== ===");
         Checker(Utilities.GetPlayers());
-        
+
         return HookResult.Continue;
     }
     [GameEventHandler]
@@ -211,11 +211,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             SendConsoleCommand(BOT_KICK);
             IsNeedKick = false;
-        } 
+        }
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-       // Server.PrintToChatAll("=== OnSwichTeam ===");
-       // Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
-        
+        // Server.PrintToChatAll("=== OnSwichTeam ===");
+        // Server.PrintToChatAll($"T = {T}| CT = {CT}| SPEC = {SPEC}| IsBotExists = {IsBotExists}");
+
         if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
         {
             SendConsoleCommand(BOT_KICK);
@@ -233,14 +233,15 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         if (IsBotExists && T > CT && botTeam == 2)
         {
-            Utilities.GetPlayers().Find( player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.CounterTerrorist);
+            Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.CounterTerrorist);
         }
         else if (IsBotExists && CT > T && botTeam == 3)
         {
             Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.Terrorist);
         }
-            //KickBotsByPlayersCount(T, CT, SPEC, IsBotExists);
-            // Server.PrintToChatAll("=== ==== ==== ===");
-            return HookResult.Continue;
+        //KickBotsByPlayersCount(T, CT, SPEC, IsBotExists);
+        // Server.PrintToChatAll("=== ==== ==== ===");
+        return HookResult.Continue;
+        
     }
 }
