@@ -1,5 +1,5 @@
 ![Static Badge](https://img.shields.io/badge/Plugin-v1.1.0-darkgreen)
-![Static Badge](https://img.shields.io/badge/CSSharpAPI-v65-blue)
+![Static Badge](https://img.shields.io/badge/CSSharpAPI-Min:v65-blue)
 ![Static Badge](https://img.shields.io/badge/Status-dev-darkred)
 
 ![image](https://github.com/jackson-tougher/cs2_BOTiki/assets/119735356/c7ab2b4a-1c24-4364-a2e8-346c3d94aa4b)
