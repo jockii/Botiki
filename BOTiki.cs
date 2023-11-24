@@ -161,7 +161,7 @@ public class Botiki : BasePlugin
     public void OnCommandBotikiKick(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (controller.SteamID == config.admin_ID64) 
+        if (controller.SteamID == config.admin_ID64)
         {
             SendConsoleCommand(BOT_KICK);
             controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}Bot`s was kicked... {ChatColors.Green}OK!");
@@ -248,6 +248,6 @@ public class Botiki : BasePlugin
             Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.Terrorist);
         }
         return HookResult.Continue;
-        
+
     }
 }
