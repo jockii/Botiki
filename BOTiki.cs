@@ -25,11 +25,11 @@ public class Config
 [MinimumApiVersion(65)]
 public class Botiki : BasePlugin
 {
-    public override string ModuleName => "|Botiki|";
+    public override string ModuleName => "Botiki";
 
-    public override string ModuleVersion => "|v1.1.0";
+    public override string ModuleVersion => "v1.5.0";
 
-    public override string ModuleAuthor => "|jackson tougher|";
+    public override string ModuleAuthor => "jackson tougher, VoCs";
     public Config config = new Config();
     public override void Load(bool hotReload)
     {
