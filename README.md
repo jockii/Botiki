@@ -27,11 +27,11 @@ You can specify the value of players in the config, after which the bots will be
 ## Config
 The config `Config.json` is generated automatically in the folder where the plugin is located. In order for your changes to take effect (you made yourself an admin), 
 you need to restart the server the first time, after changing the data, you can restart the plugin with the command `!botiki_restart`
-* `admin_ID64` - steam_id who will be an admin in the steam_id64 format(example: 76561199424391272)
+* `admins_ID64` - list of steam_id`s who will be an admin in the steam_id64 format (example: 76561199424391272)
 * `bot_HP` - value of the bot's HP (example: 300 | value = 1 .... 9999999)
 * `playerCount_botKick` - number of players value after which bots will be deleted (example: 10)
 
-![image](https://github.com/jackson-tougher/cs2_BOTiki/assets/119735356/3920191c-0fbd-47a6-b776-5c3b5be357c6)
+![image](https://github.com/jackson-tougher/cs2_BOTiki/assets/119735356/e0f259b9-50bd-4630-8e36-e8310694bdde)
 
 ## Note
 * `game_mode 0 game_type 0` => `casual`  |  in `competitive` maybe not correct working!
