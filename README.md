@@ -1,4 +1,4 @@
-![Static Badge](https://img.shields.io/badge/Plugin-v1.1.0-darkgreen)
+![Static Badge](https://img.shields.io/badge/Plugin-v1.5.0-darkgreen)
 ![Static Badge](https://img.shields.io/badge/CSSharpAPI-Min:v65-blue)
 ![Static Badge](https://img.shields.io/badge/Status-dev-darkred)
 
