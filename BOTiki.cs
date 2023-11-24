@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 namespace Botiki;
 public class Config
 {
-    public List<ulong> admin_ID64 { get; set; } = new List<ulong>();
+    public List<ulong> admins_ID64 { get; set; } = new List<ulong>();
     public int bot_HP { get; set; }
     public int playerCount_botKick { get; set; }
 
@@ -30,13 +30,13 @@ public class Botiki : BasePlugin
     public override string ModuleVersion => "|v1.1.0";
 
     public override string ModuleAuthor => "|jackson tougher|";
-    public Config config { get; set; }
+    public Config config = new Config();
     public override void Load(bool hotReload)
     {
         var configPath = Path.Join(ModuleDirectory, "Config.json");
         if (!File.Exists(configPath))
         {
-            config.admin_ID64.Add(76561199414091272);
+            config.admins_ID64.Add(76561199414091272); config.admins_ID64.Add(76561199414091272);
             config.bot_HP = 100;
             config.playerCount_botKick = 10;
             File.WriteAllText(configPath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
@@ -135,7 +135,7 @@ public class Botiki : BasePlugin
     public void OnCommandSetBotHp(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (config.admin_ID64.Exists(adminID => adminID == controller.SteamID))
+        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID))
         {
             if (Regex.IsMatch(command.GetArg(1), @"^\d+$"))
             {
@@ -162,7 +162,7 @@ public class Botiki : BasePlugin
     public void OnCommandBotikiKick(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (config.admin_ID64.Exists(adminID => adminID == controller.SteamID)) 
+        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID)) 
         {
             SendConsoleCommand(BOT_KICK);
             controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}Bot`s was kicked... {ChatColors.Green}OK!");
@@ -175,7 +175,7 @@ public class Botiki : BasePlugin
     public void OnBotikiConfigReload(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (config.admin_ID64.Exists(adminID => adminID == controller.SteamID))
+        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID))
         {
             OnConfigReload();
             controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}...configuration was reloaded. {ChatColors.Green}OK!");
