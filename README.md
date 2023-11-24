@@ -1,4 +1,5 @@
-# Botiki v1.1.0
+https://img.shields.io/badge/API-v65-green
+
 -------------------------------------------------------------------------------------------------------------------
 The plugin adds bots and currently works as a "balance" mode, that is, if T = 2 and CT = 1, then a bot will be added to the CT command.
 * You can specify in the config the number of real players playerCount_botKick value after which the bots will leave.
