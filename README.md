@@ -1,4 +1,5 @@
-https://img.shields.io/badge/API-v65-green
+![Static Badge](https://img.shields.io/badge/API-v65-green)
+
 
 -------------------------------------------------------------------------------------------------------------------
 The plugin adds bots and currently works as a "balance" mode, that is, if T = 2 and CT = 1, then a bot will be added to the CT command.
