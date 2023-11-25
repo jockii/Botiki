@@ -16,6 +16,13 @@ You can specify the value of players in the config, after which the bots will be
 4. Kick the bots if it is not necessary, or if there is a bug with the bot, they will be added in the next round
 5. Change the config values and download the changes immediately without rebooting the server
 
+## To do list
+I want to implement full management of bots in one place =D
+- [x] Balance mode ( there are still bugs :) )
+- [ ] Fill mode ( similarly bot_quota_mode fill ) 
+- [ ] Match mods ( similarly bot_quota_mode match )
+- [ ] Off/On bots ( turn bots ON or OFF with one click )
+
 ## Commands
 * `!botiki_kick` - will remove bots immediately
 * `!botiki_reload` - reload the config if you need to accept any changes
