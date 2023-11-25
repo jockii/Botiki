@@ -64,8 +64,9 @@ public class Botiki : BasePlugin
     public const int MAX_BOT_HP = 9999999;                          //
     public bool IsNeedKick = true;                                 //
     public bool isNeedMatchMode = true;                           //
-    public bool isNeedFillMode = true;                          //
+    public bool isNeedFillMode = true;                           //
     public bool isNeedBalancedMode = true;                      //
+    public bool isNeedAddBot = true;                           //
 
     public void SendConsoleCommand(string msg)
     {
@@ -103,6 +104,23 @@ public class Botiki : BasePlugin
         });
 
         return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, realPlayers);
+    }
+    (string kickbotT, string kickbotCT) KickOneBot(List<CCSPlayerController> players)
+    {
+        List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
+        string kickbotT = "";
+        string kickbotCT = "";
+        int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
+        int? botInTER = bots.Find(bot => bot.TeamNum == 2)?.TeamNum;
+        int? botCT_UserId = bots.Find(bot => bot.TeamNum == 3)?.UserId;
+        int? botInCT = bots.Find(bot => bot.TeamNum == 3)?.TeamNum;
+
+        if (botInTER == 2)
+            kickbotT = $"kickid {botT_UserId}";
+        else if (botInCT == 3)
+            kickbotCT = $"kickid {botCT_UserId}";
+
+        return (kickbotT, kickbotCT);
     }
     public void SetBotHp(List<CCSPlayerController> playersList)
     {
@@ -160,48 +178,40 @@ public class Botiki : BasePlugin
             AddBotsBalancedMode();
     }
     // fill mode <---
-    public void AddBotsFillMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-
-    }
-    public void KickbotsFillMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-
-    }
     public void FillMode()
     {
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        (string kickbotT, string kickbotCT) = KickOneBot(Utilities.GetPlayers());
 
         if (isNeedFillMode)
         {
             SendConsoleCommand(BOT_MODE_FILL);
             SendConsoleCommand($"bot_quota {config.bot_Count}");
+            SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+            SendConsoleCommand(BOT_ADD);
 
             isNeedFillMode = false;
             isNeedBalancedMode = true;
             isNeedMatchMode = true;
         }
 
-        AddBotsFillMode();
-        KickbotsFillMode();
+        RegisterEventHandler<EventSwitchTeam>((@event, info) =>
+        {
+            SendConsoleCommand(T > CT ? kickbotT : kickbotCT );
+
+            return HookResult.Continue;
+        });
+
+        RegisterEventHandler<EventPlayerDisconnect>((@event, info) =>
+        {
+            SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+
+            return HookResult.Continue;
+        });
+
+        
     }
     // match mode <---
-    public void AddBotsMatchMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-
-    }
-    public void KickBotsMatchMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-
-    }
     public void MatchMode()
     {
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
@@ -210,14 +220,14 @@ public class Botiki : BasePlugin
         {
             SendConsoleCommand(BOT_MODE_FILL);
             SendConsoleCommand($"bot_quota {config.bot_Count}");
+            SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
 
             isNeedMatchMode = false;
             isNeedBalancedMode = true;
             isNeedFillMode = true;
         }
 
-        AddBotsMatchMode();
-        KickBotsMatchMode();
+        
     }
     //
     [ConsoleCommand("css_btk_hp")]
