@@ -16,7 +16,7 @@ public class Config
     public List<ulong> admins_ID64 { get; set; } = new List<ulong>();
     public int bot_HP { get; set; }
     public int playerCount_botKick { get; set; }
-    public string? add_bot_Mode { get; set; }
+    public string add_bot_Mode { get; set; }
     public int bot_Count { get; set; }
 }
 
@@ -26,7 +26,7 @@ public class Botiki : BasePlugin
 {
     public override string ModuleName => "Botiki";
 
-    public override string ModuleVersion => "v1.6.0";
+    public override string ModuleVersion => "v1.7.5";
 
     public override string ModuleAuthor => "jackson tougher, VoCs007";
     public Config config = new Config();
@@ -209,6 +209,9 @@ public class Botiki : BasePlugin
             return HookResult.Continue;
         });
 
+        if (T + CT >= config.playerCount_botKick)
+            SendConsoleCommand(BOT_KICK);
+
         
     }
     // match mode <---
@@ -307,10 +310,13 @@ public class Botiki : BasePlugin
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        //(int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
 
-        if (config.add_bot_Mode == null || config.add_bot_Mode == "" || config.add_bot_Mode != "fill" || config.add_bot_Mode != "match" || config.add_bot_Mode != "balanced" || config.add_bot_Mode != "off")
-            Console.WriteLine("Error config setting");
+        if (config.add_bot_Mode == null || config.add_bot_Mode == "") // || config.add_bot_Mode != "fill" || config.add_bot_Mode != "match" || config.add_bot_Mode != "balanced" || config.add_bot_Mode != "off")
+        {
+            Console.WriteLine("========================\n============Error config setting\n=====================================");
+            OnConfigReload();
+        }
         else
         {
             if (config.add_bot_Mode == "fill")
@@ -336,7 +342,7 @@ public class Botiki : BasePlugin
        
         if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
         {
-            SendConsoleCommand(BOT_KICK);
+            //SendConsoleCommand(BOT_KICK);
             SendConsoleCommand("sv_cheats true");
             SendConsoleCommand("endround");
             SendConsoleCommand("sv_cheats false");
