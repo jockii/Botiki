@@ -28,7 +28,7 @@ public class Botiki : BasePlugin
 
     public override string ModuleVersion => "v1.6.0";
 
-    public override string ModuleAuthor => "jackson tougher, VoCs";
+    public override string ModuleAuthor => "jackson tougher, VoCs007";
     public Config config = new Config();
     public override void Load(bool hotReload)
     {
@@ -118,13 +118,17 @@ public class Botiki : BasePlugin
         });
     }
     // banaced mode <---
-    public void AddBotsBalancedMode(int T, int CT)
+    public void AddBotsBalancedMode()
     {
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+
         if ((T + CT) % 2 != 0)
             SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
     }
-    public void KickBotsBalancedMode(int T, int CT, int SPEC)
+    public void KickBotsBalancedMode()
     {
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+
         if ((T + CT) % 2 == 0)
             SendConsoleCommand(BOT_KICK);
         else if (T + CT >= config.playerCount_botKick)
@@ -132,9 +136,9 @@ public class Botiki : BasePlugin
         else if (T + CT == 0 && SPEC >= 0)
             SendConsoleCommand(BOT_KICK);
     }
-    public void BalancedMode(List<CCSPlayerController> players)
+    public void BalancedMode()
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
 
         if (isNeedBalancedMode)
         {
@@ -151,22 +155,26 @@ public class Botiki : BasePlugin
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
 
         if (IsBotExists)
-            KickBotsBalancedMode(T, CT, SPEC);
+            KickBotsBalancedMode();
         else
-            AddBotsBalancedMode(T, CT);
+            AddBotsBalancedMode();
     }
     // fill mode <---
     public void AddBotsFillMode()
     {
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+
 
     }
     public void KickbotsFillMode()
     {
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+
 
     }
-    public void FillMode(List<CCSPlayerController> players)
+    public void FillMode()
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
 
         if (isNeedFillMode)
         {
@@ -184,15 +192,19 @@ public class Botiki : BasePlugin
     // match mode <---
     public void AddBotsMatchMode()
     {
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+
 
     }
     public void KickBotsMatchMode()
     {
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+
 
     }
-    public void MatchMode(List<CCSPlayerController> players)
+    public void MatchMode()
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
 
         if (isNeedMatchMode)
         {
@@ -223,7 +235,6 @@ public class Botiki : BasePlugin
                 else
                 {
                     config.bot_HP = int.Parse(command.GetArg(1));
-                    controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}config reload... {ChatColors.Green}OK!");
                     controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Default}New Bot HP: {ChatColors.Green}{config.bot_HP}");
                 }
             }
@@ -293,11 +304,11 @@ public class Botiki : BasePlugin
         else
         {
             if (config.add_bot_Mode == "fill")
-                FillMode(Utilities.GetPlayers());
+                FillMode();
             else if (config.add_bot_Mode == "match")
-                MatchMode(Utilities.GetPlayers());
+                MatchMode();
             else if (config.add_bot_Mode == "balanced")
-                BalancedMode(Utilities.GetPlayers());
+                BalancedMode();
         }
 
         return HookResult.Continue;
