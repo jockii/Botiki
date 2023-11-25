@@ -4,7 +4,7 @@
 
 ![image](https://github.com/jackson-tougher/cs2_BOTiki/assets/119735356/c7ab2b4a-1c24-4364-a2e8-346c3d94aa4b)
 
-## About
+# About
 The plugin adds bots and currently works as a `balance mode` that is, if `T = 2` and `CT = 1`, then a bot will be added to the CT team.
 
 ## Functions
@@ -15,6 +15,13 @@ You can specify the value of players in the config, after which the bots will be
 3. Set the bot's health in the configuration to permanently accept this value, even when the server is restarted, or a command in the game chat that will change the bot's health until the server is restarted
 4. Kick the bots if it is not necessary, or if there is a bug with the bot, they will be added in the next round
 5. Change the config values and download the changes immediately without rebooting the server
+
+## To do list
+I want to implement full management of bots in one place =D
+- [x] Balance mode ( there are still bugs :) )
+- [ ] Fill mode ( similarly bot_quota_mode fill ) 
+- [ ] Match mods ( similarly bot_quota_mode match )
+- [ ] Off/On bots ( turn bots ON or OFF with one click )
 
 ## Commands
 * `!botiki_kick` - will remove bots immediately
