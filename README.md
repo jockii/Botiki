@@ -56,7 +56,7 @@ game_mode 0 game_type 0 => casual | in competitive maybe not correct working!
 You maybe need to remove bot_quota and bot_quota_mode from your server CFG, but not sure :/
 ```
 ## `Attention`
-* Maybe the plugin will have some bugs, pls send me ERRORS                     
+Maybe the plugin will have some bugs, pls send me ERRORS                     
 ## `Developers`
 ![Static Badge](https://img.shields.io/badge/Author-jackson%20tougher-orange)
 ![Static Badge](https://img.shields.io/badge/Collaborator-VoCs-purple)
