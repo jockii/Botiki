@@ -43,6 +43,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         SendConsoleCommand(BOT_MODE_FILL);
         SendConsoleCommand($"bot_quota {Config.BotCount}");
         SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+        SendConsoleCommand(BOT_ADD);
 
         Console.WriteLine($"Plugin: {ModuleName} ver:{ModuleVersion} by {ModuleAuthor} has been loaded =)");
     }
@@ -62,51 +63,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         Server.ExecuteCommand(msg);
     }
 
-    (int T, int CT) GetPlayersCount(List<CCSPlayerController> players)
-    {
-        List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
-
-        int CT = 0;
-        int T = 0;
-        int SPEC = 0;
-        int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
-
-        realPlayers.ForEach(player =>
-        {
-            if (player.TeamNum == 1)
-                SPEC++;
-            else if (player.TeamNum == 2)
-                T++;
-            else if (player.TeamNum == 3)
-                CT++;
-        });
-
-        return (T, CT);
-    }
-
-    (string kickbotT, string kickbotCT) KickOneBot(List<CCSPlayerController> players)
-    {
-        List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
-        string kickbotT = "";
-        string kickbotCT = "";
-        int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
-        int? botInTER = bots.Find(bot => bot.TeamNum == 2)?.TeamNum;
-        int? botCT_UserId = bots.Find(bot => bot.TeamNum == 3)?.UserId;
-        int? botInCT = bots.Find(bot => bot.TeamNum == 3)?.TeamNum;
-
-        if (botInTER == 2)
-            kickbotT = $"kickid {botT_UserId}";
-        else if (botInCT == 3)
-            kickbotCT = $"kickid {botCT_UserId}";
-
-        return (kickbotT, kickbotCT);
-    }
-
-    public void SetBotHp(List<CCSPlayerController> playersList)
+    public void SetBotHp(List<CCSPlayerController> players)
     {
         RegisterEventHandler<EventRoundStart>((@event, info) =>
         {
-            playersList.ForEach(player =>
+            players.ForEach(player =>
             {
                 if (player.IsValid && player.IsBot && !player.IsHLTV)
                 {
@@ -121,24 +82,56 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         });
     }
 
-    public void FillMode(CCSPlayerController controller)
+    public void FillMode(List<CCSPlayerController> players, CCSPlayerController controller)
     {
-        (int T, int CT) = GetPlayersCount(Utilities.GetPlayers());
-        (string kickbotT, string kickbotCT) = KickOneBot(Utilities.GetPlayers());
+        List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
 
-        RegisterEventHandler<EventSwitchTeam>((@event, info) =>
+        string kickbotT = "";
+        string kickbotCT = "";
+        int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
+        int? botInTER = bots.Find(bot => bot.TeamNum == 2)?.TeamNum;
+        int? botCT_UserId = bots.Find(bot => bot.TeamNum == 3)?.UserId;
+        int? botInCT = bots.Find(bot => bot.TeamNum == 3)?.TeamNum;
+
+        if (botInTER == 2)
+            kickbotT = $"kickid {botT_UserId}";
+        if (botInCT == 3)
+            kickbotCT = $"kickid {botCT_UserId}";
+
+        int CT = 0;
+        int T = 0;
+
+        foreach (var player in players)
+        {
+            if (player.TeamNum == 2)
+                T++;
+            if (player.TeamNum == 3)
+                CT++;
+        }
+
+        RegisterEventHandler<EventPlayerTeam>((@event, info) =>
         {
             if (controller.TeamNum == 1)
                 SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
-            else
-                SendConsoleCommand(T > CT ? kickbotT : kickbotCT);
+
+            if (controller.TeamNum == 2)
+            {
+                SendConsoleCommand(kickbotT);
+                SendConsoleCommand(BOT_ADD_CT);
+            }
+
+            if (controller.TeamNum == 3)
+            {
+                SendConsoleCommand(kickbotCT);
+                SendConsoleCommand(BOT_ADD_T);
+            }
 
             return HookResult.Continue;
         });
 
         RegisterEventHandler<EventPlayerDisconnect>((@event, info) =>
         {
-            if (T + CT > Config.PlayersCountForKickBots)
+            if (T + CT < Config.PlayersCountForKickBots)
                 SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
 
             return HookResult.Continue;
