@@ -2,6 +2,7 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
@@ -11,43 +12,35 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Botiki;
-public class Config
+public class BotikiConfig : BasePluginConfig
 {
-    public List<ulong> admins_ID64 { get; set; } = new List<ulong>();
-    public int bot_HP { get; set; }
-    public int playerCount_botKick { get; set; }
-    public string add_bot_Mode { get; set; }
-    public int bot_Count { get; set; }
+    public string AdminPermissionFlags { get; set; } = "css/example-flag";
+    public int BotsHealth { get; set; } = 100;
+    public int PlayersCountForKickBots { get; set; } = 10;
+    public int BotCount { get; set; } = 10;
 }
 
 
 [MinimumApiVersion(65)]
-public class Botiki : BasePlugin
+public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 {
     public override string ModuleName => "Botiki";
 
     public override string ModuleVersion => "v1.7.5";
 
-    public override string ModuleAuthor => "jackson tougher, VoCs007";
-    public Config config = new Config();
+    public override string ModuleAuthor => "jockii, VoCs007";
+
+    public BotikiConfig Config { get; set; } = new BotikiConfig();
+
+    public void OnConfigParsed(BotikiConfig config)
+    {
+        Config = config;
+    }
+
     public override void Load(bool hotReload)
     {
-        var configPath = Path.Join(ModuleDirectory, "Config.json");
-        if (!File.Exists(configPath))
-        {
-            config.admins_ID64.Add(76561199414091272); config.admins_ID64.Add(76561199414091272);
-            config.bot_HP = 100;
-            config.playerCount_botKick = 10;
-            config.add_bot_Mode = "balanced";
-            config.bot_Count = 10;
-            File.WriteAllText(configPath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
-        }
-        else config = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath));
-
         Console.WriteLine($"Plugin: {ModuleName} ver:{ModuleVersion} by {ModuleAuthor} has been loaded =)");
-        SendConsoleCommand(BOT_KICK);
-        SendConsoleCommand(BOT_QUOTA_1);
-        SendConsoleCommand(BOT_MODE_FILL);
+
     }
 
     public const string BOT_JOIN_AFTER_PLAYER = "bot_join_after_player 1";     //
@@ -62,11 +55,7 @@ public class Botiki : BasePlugin
     public const int MIN_BOT_HP = 1;                                  //
     public const int STANDART_BOT_HP = 100;                          //
     public const int MAX_BOT_HP = 9999999;                          //
-    public bool IsNeedKick = true;                                 //
-    public bool isNeedMatchMode = true;                           //
-    public bool isNeedFillMode = true;                           //
-    public bool isNeedBalancedMode = true;                      //
-    public bool isNeedAddBot = true;                           //
+    public bool isNeedKick = true;                           //
 
     public void SendConsoleCommand(string msg)
     {
@@ -78,12 +67,6 @@ public class Botiki : BasePlugin
         realPlayers.Find(player => player.TeamNum == teamToChange)?.SwitchTeam(teamName);
     }
 
-    public void OnConfigReload()
-    {
-        var configPath = Path.Join(ModuleDirectory, "Config.json");
-        config = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath));
-    }
-    
     (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) GetPlayersCount(List<CCSPlayerController> players)
     {
         List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
@@ -124,48 +107,26 @@ public class Botiki : BasePlugin
     }
     public void SetBotHp(List<CCSPlayerController> playersList)
     {
-        playersList.ForEach(player =>
+        RegisterEventHandler<EventRoundStart>((@event, info) =>
         {
-            if (player.IsValid && player.IsBot && !player.IsHLTV)
+            playersList.ForEach(player =>
             {
-                if (config.bot_HP >= MIN_BOT_HP && config.bot_HP <= MAX_BOT_HP)
-                    player.Pawn.Value.Health = config.bot_HP;
-                else if (config.bot_HP < MIN_BOT_HP || config.bot_HP > MAX_BOT_HP)
-                    player.Pawn.Value.Health = STANDART_BOT_HP;
-            }
+                if (player.IsValid && player.IsBot && !player.IsHLTV)
+                {
+                    if (Config.BotsHealth >= MIN_BOT_HP && Config.BotsHealth <= MAX_BOT_HP)
+                        player.Pawn.Value.Health = Config.BotsHealth;
+                    else if (Config.BotsHealth < MIN_BOT_HP || Config.BotsHealth > MAX_BOT_HP)
+                        player.Pawn.Value.Health = STANDART_BOT_HP;
+                }
+            });
+
+            return HookResult.Continue;
         });
     }
     // banaced mode <---
-    public void AddBotsBalancedMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-        if ((T + CT) % 2 != 0)
-            SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
-    }
-    public void KickBotsBalancedMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-        if ((T + CT) % 2 == 0)
-            SendConsoleCommand(BOT_KICK);
-        else if (T + CT >= config.playerCount_botKick)
-            SendConsoleCommand(BOT_KICK);
-        else if (T + CT == 0 && SPEC >= 0)
-            SendConsoleCommand(BOT_KICK);
-    }
     public void BalancedMode()
     {
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-        if (isNeedBalancedMode)
-        {
-            SendConsoleCommand(BOT_MODE_FILL);
-
-            isNeedBalancedMode = false;
-            isNeedFillMode = true;
-            isNeedMatchMode = true;
-        }
 
         if (T > 1 && CT == 0)
             ChangePlayerTeamSide(realPlayers, CsTeam.CounterTerrorist);
@@ -173,9 +134,19 @@ public class Botiki : BasePlugin
             ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
 
         if (IsBotExists)
-            KickBotsBalancedMode();
+        {
+            if ((T + CT) % 2 == 0)
+                SendConsoleCommand(BOT_KICK);
+            else if (T + CT >= Config.PlayersCountForKickBots)
+                SendConsoleCommand(BOT_KICK);
+            else if (T + CT == 0 && SPEC >= 0)
+                SendConsoleCommand(BOT_KICK);
+        }
         else
-            AddBotsBalancedMode();
+        {
+            if ((T + CT) % 2 != 0)
+                SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+        }
     }
     // fill mode <---
     public void FillMode()
@@ -183,21 +154,14 @@ public class Botiki : BasePlugin
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
         (string kickbotT, string kickbotCT) = KickOneBot(Utilities.GetPlayers());
 
-        if (isNeedFillMode)
-        {
-            SendConsoleCommand(BOT_MODE_FILL);
-            SendConsoleCommand($"bot_quota {config.bot_Count}");
-            SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
-            SendConsoleCommand(BOT_ADD);
-
-            isNeedFillMode = false;
-            isNeedBalancedMode = true;
-            isNeedMatchMode = true;
-        }
+        SendConsoleCommand(BOT_MODE_FILL);
+        SendConsoleCommand($"bot_quota {Config.BotCount}");
+        SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+        SendConsoleCommand(BOT_ADD);
 
         RegisterEventHandler<EventSwitchTeam>((@event, info) =>
         {
-            SendConsoleCommand(T > CT ? kickbotT : kickbotCT );
+            SendConsoleCommand(T > CT ? kickbotT : kickbotCT);
 
             return HookResult.Continue;
         });
@@ -209,35 +173,47 @@ public class Botiki : BasePlugin
             return HookResult.Continue;
         });
 
-        if (T + CT >= config.playerCount_botKick)
+        if (T + CT >= Config.PlayersCountForKickBots)
             SendConsoleCommand(BOT_KICK);
 
-        
+
     }
     // match mode <---
     public void MatchMode()
     {
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        (string kickbotT, string kickbotCT) = KickOneBot(Utilities.GetPlayers());
 
-        if (isNeedMatchMode)
+        SendConsoleCommand(BOT_MODE_MATCH);
+        SendConsoleCommand($"bot_quota {Config.BotCount}");
+        SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+
+        RegisterEventHandler<EventSwitchTeam>((@event, info) =>
         {
-            SendConsoleCommand(BOT_MODE_FILL);
-            SendConsoleCommand($"bot_quota {config.bot_Count}");
-            SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+            SendConsoleCommand(T > CT ? kickbotT : kickbotCT);
 
-            isNeedMatchMode = false;
-            isNeedBalancedMode = true;
-            isNeedFillMode = true;
-        }
+            return HookResult.Continue;
+        });
 
-        
+        RegisterEventHandler<EventPlayerDisconnect>((@event, info) =>
+        {
+            SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+
+            return HookResult.Continue;
+        });
+
+        if (T + CT >= Config.PlayersCountForKickBots)
+            SendConsoleCommand(BOT_KICK);
+
+
     }
     //
-    [ConsoleCommand("css_btk_hp")]
-    public void OnCommandSetBotHp(CCSPlayerController? controller, CommandInfo command)
+    [ConsoleCommand("bothp")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnCommandSBotHp(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID))
+        if (AdminManager.PlayerHasPermissions(controller, Config.AdminPermissionFlags))
         {
             if (Regex.IsMatch(command.GetArg(1), @"^\d+$"))
             {
@@ -247,8 +223,8 @@ public class Botiki : BasePlugin
                 }
                 else
                 {
-                    config.bot_HP = int.Parse(command.GetArg(1));
-                    controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Default}New Bot HP: {ChatColors.Green}{config.bot_HP}");
+                    Config.BotsHealth = int.Parse(command.GetArg(1));
+                    controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Default}New Bot HP: {ChatColors.Green}{Config.BotsHealth}");
                 }
             }
             else
@@ -259,11 +235,14 @@ public class Botiki : BasePlugin
         else
             controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
     }
-    [ConsoleCommand("css_btk_kick")]
-    public void OnCommandBotikiKick(CCSPlayerController? controller, CommandInfo command)
+
+
+    [ConsoleCommand("botkick")]
+    [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
+    public void OnCommandBotKick(CCSPlayerController? controller, CommandInfo command)
     {
         if (controller == null) return;
-        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID))
+        if (AdminManager.PlayerHasPermissions(controller, Config.AdminPermissionFlags))
         {
             SendConsoleCommand(BOT_KICK);
             controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}Bot`s was kicked... {ChatColors.Green}OK!");
@@ -272,74 +251,52 @@ public class Botiki : BasePlugin
             controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
     }
 
-    [ConsoleCommand("css_btk_reload")]
-    public void OnBotikiConfigReload(CCSPlayerController? controller, CommandInfo command)
-    {
-        if (controller == null) return;
-        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID))
-        {
-            OnConfigReload();
-            controller.PrintToChat($" {ChatColors.Red}[ {ChatColors.Purple}Botiki {ChatColors.Red}] {ChatColors.Olive}...configuration was reloaded. {ChatColors.Green}OK!");
-        }
-        else
-            controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
-    }
-    [ConsoleCommand("css_btk_endround")]
-    public void OnRoundEndCommand(CCSPlayerController? controller, CommandInfo command)
-    {
-        if (controller == null) return;
-        if (config.admins_ID64.Exists(adminID => adminID == controller.SteamID))
-        {
-            SendConsoleCommand("sv_cheats true");
-            SendConsoleCommand("endround");
-            SendConsoleCommand("sv_cheats false");
-            Server.PrintToChatAll($" {ChatColors.Gold}{controller.PlayerName} {ChatColors.Silver}End this round now!");
-        }
-        else
-            controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
-    }
+
+    //[ConsoleCommand("css_btk_endround")]
+    //public void OnRoundEndCommand(CCSPlayerController? controller, CommandInfo command)
+    //{
+    //    if (controller == null) return;
+    //    if (AdminManager.PlayerHasPermissions(controller, Config.AdminPermissinFlags))
+    //    {
+    //        SendConsoleCommand("sv_cheats true");
+    //        SendConsoleCommand("endround");
+    //        SendConsoleCommand("sv_cheats false");
+    //        Server.PrintToChatAll($" {ChatColors.Gold}{controller.PlayerName} {ChatColors.Silver}End this round now!");
+    //    }
+    //    else
+    //        controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
+    //}
 
 
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        SetBotHp(Utilities.GetPlayers());
+
+
         return HookResult.Continue;
     }
+
 
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        //(int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-        if (config.add_bot_Mode == null || config.add_bot_Mode == "") // || config.add_bot_Mode != "fill" || config.add_bot_Mode != "match" || config.add_bot_Mode != "balanced" || config.add_bot_Mode != "off")
-        {
-            Console.WriteLine("========================\n============Error config setting\n=====================================");
-            OnConfigReload();
-        }
-        else
-        {
-            if (config.add_bot_Mode == "fill")
-                FillMode();
-            else if (config.add_bot_Mode == "match")
-                MatchMode();
-            else if (config.add_bot_Mode == "balanced")
-                BalancedMode();
-        }
+        
 
         return HookResult.Continue;
     }
+
+
     [GameEventHandler]
     public HookResult OnPlayerChangeTeam(EventSwitchTeam @event, GameEventInfo info)
     {
         (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
 
-        if (IsNeedKick)
+        if (isNeedKick)
         {
             SendConsoleCommand(BOT_KICK);
-            IsNeedKick = false;
+            isNeedKick = false;
         }
-       
+
         if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
         {
             //SendConsoleCommand(BOT_KICK);
