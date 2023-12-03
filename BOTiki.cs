@@ -14,9 +14,17 @@ using System.Text.RegularExpressions;
 namespace Botiki;
 public class BotikiConfig : BasePluginConfig
 {
+    [JsonPropertyName("AdminPermissionFlags")]
     public string AdminPermissionFlags { get; set; } = "css/example-flag";
+    [JsonPropertyName("PluginMode")]
+    public string PluginMode { get; set; } = "fill";
+    [JsonPropertyName("BotJoinAfterPlayer")]
+    public bool BotJoinAfterPlayer { get; set; } = true;
+    [JsonPropertyName("BotsHealth")]
     public int BotsHealth { get; set; } = 100;
+    [JsonPropertyName("PlayersCountForKickBots")]
     public int PlayersCountForKickBots { get; set; } = 10;
+    [JsonPropertyName("BotCount")]
     public int BotCount { get; set; } = 10;
 }
 
@@ -26,7 +34,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 {
     public override string ModuleName => "Botiki";
 
-    public override string ModuleVersion => "v1.7.5";
+    public override string ModuleVersion => "v1.8.0";
 
     public override string ModuleAuthor => "jockii, VoCs007";
 
@@ -39,23 +47,63 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public override void Load(bool hotReload)
     {
-        Console.WriteLine($"Plugin: {ModuleName} ver:{ModuleVersion} by {ModuleAuthor} has been loaded =)");
+        SendConsoleCommand(BOT_KICK);
 
+        if (Config.PluginMode == "fill")
+        {
+            SendConsoleCommand(BOT_MODE_FILL);
+            SendConsoleCommand($"bot_quota {Config.BotCount}");
+
+            if (Config.BotJoinAfterPlayer)
+                SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+            else
+                SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
+        }
+
+        if (Config.PluginMode == "match")
+        {
+            SendConsoleCommand(BOT_MODE_MATCH);
+            SendConsoleCommand($"bot_quota {Config.BotCount}");
+
+            if (Config.BotJoinAfterPlayer)
+                SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+            else
+                SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
+        }
+
+        if (Config.PluginMode == "balanced")
+        {
+            SendConsoleCommand(BOT_MODE_FILL);
+            SendConsoleCommand(BOT_QUOTA_1);
+
+            if (Config.BotJoinAfterPlayer)
+                SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+            else
+                SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
+        }
+
+
+        Console.WriteLine($"====================");
+        Console.WriteLine();
+        Console.WriteLine($"Plugin: {ModuleName}\nVersion: {ModuleVersion}\nAuthor: {ModuleAuthor}\nInfo: https://github.com/jockii");
+        Console.WriteLine();
+        Console.WriteLine($"====================");
     }
 
-    public const string BOT_JOIN_AFTER_PLAYER = "bot_join_after_player 1";     //
-    public const string BOT_AUTO_VACATE = "bot_auto_vacate 1";                //
-    public const string BOT_MODE_FILL = "bot_quota_mode fill";               //
-    public const string BOT_MODE_MATCH = "bot_quota_mode match";            //
-    public const string BOT_QUOTA_1 = "bot_quota 1";                       //
-    public const string BOT_ADD_CT = "bot_add_ct";                        //
-    public const string BOT_ADD_T = "bot_add_t";                         //        
-    public const string BOT_ADD = "bot_add";                            //
-    public const string BOT_KICK = "bot_kick";                         //       <-- 
-    public const int MIN_BOT_HP = 1;                                  //
-    public const int STANDART_BOT_HP = 100;                          //
-    public const int MAX_BOT_HP = 9999999;                          //
-    public bool isNeedKick = true;                           //
+    public const string BOT_JOIN_AFTER_PLAYER = "bot_join_after_player true";
+    public const string BOT_NOT_JOIN_AFTER_PLAYER = "bot_join_after_player false";
+    public const string BOT_AUTO_VACATE = "bot_auto_vacate 1";
+    public const string BOT_MODE_FILL = "bot_quota_mode fill";
+    public const string BOT_MODE_MATCH = "bot_quota_mode match";
+    public const string BOT_QUOTA_1 = "bot_quota 1";
+    public const string BOT_ADD_CT = "bot_add_ct";
+    public const string BOT_ADD_T = "bot_add_t";
+    public const string BOT_ADD = "bot_add";
+    public const string BOT_KICK = "bot_kick";
+    public const int MIN_BOT_HP = 1;
+    public const int STANDART_BOT_HP = 100;
+    public const int MAX_BOT_HP = 9999999;
+    public bool isNeedKick = true;
 
     public void SendConsoleCommand(string msg)
     {
@@ -78,9 +126,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         realPlayers.ForEach(player =>
         {
-            if (player.TeamNum == 1)
-                SPEC++;
-            else if (player.TeamNum == 2)
+            if (player.TeamNum == 2)
                 T++;
             else if (player.TeamNum == 3)
                 CT++;
@@ -105,11 +151,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         return (kickbotT, kickbotCT);
     }
-    public void SetBotHp(List<CCSPlayerController> playersList)
+    public void SetBotHp(List<CCSPlayerController> players)
     {
         RegisterEventHandler<EventRoundStart>((@event, info) =>
         {
-            playersList.ForEach(player =>
+            players.ForEach(player =>
             {
                 if (player.IsValid && player.IsBot && !player.IsHLTV)
                 {
@@ -139,7 +185,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 SendConsoleCommand(BOT_KICK);
             else if (T + CT >= Config.PlayersCountForKickBots)
                 SendConsoleCommand(BOT_KICK);
-            else if (T + CT == 0 && SPEC >= 0)
+            else if (T + CT == 0)
                 SendConsoleCommand(BOT_KICK);
         }
         else
@@ -147,19 +193,74 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             if ((T + CT) % 2 != 0)
                 SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
         }
-    }
-    // fill mode <---
-    public void FillMode()
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-        (string kickbotT, string kickbotCT) = KickOneBot(Utilities.GetPlayers());
-
-        SendConsoleCommand(BOT_MODE_FILL);
-        SendConsoleCommand($"bot_quota {Config.BotCount}");
-        SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
-        SendConsoleCommand(BOT_ADD);
 
         RegisterEventHandler<EventSwitchTeam>((@event, info) =>
+        {
+            if (isNeedKick)
+            {
+                SendConsoleCommand(BOT_KICK);
+                isNeedKick = false;
+            }
+
+            if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
+            {
+                //SendConsoleCommand(BOT_KICK);
+                SendConsoleCommand("sv_cheats true");
+                SendConsoleCommand("endround");
+                SendConsoleCommand("sv_cheats false");
+            }
+
+            if (T == 0 || CT == 0)
+            {
+                SendConsoleCommand("sv_cheats true");
+                SendConsoleCommand("endround");
+                SendConsoleCommand("sv_cheats false");
+            }
+
+            if (IsBotExists && T > CT && botTeam == 2)
+                Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.CounterTerrorist);
+            else if (IsBotExists && CT > T && botTeam == 3)
+                Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.Terrorist);
+
+            return HookResult.Continue;
+        });
+    }
+    // fill mode <---
+    public void FillMode(CCSPlayerController controller)
+    {
+        (string kickbotT, string kickbotCT) = KickOneBot(Utilities.GetPlayers());
+        var players = Utilities.GetPlayers().FindAll(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV);
+        var objBot = Utilities.GetPlayers().Find(bot => bot.IsValid && bot.IsBot && !bot.IsHLTV);
+        int T = 0;
+        int CT = 0;
+        bool botKickToogler = true;
+
+        foreach (var pl in Utilities.GetPlayers())
+        {
+            if (pl.IsValid)
+            {
+                if (pl.TeamNum == 2)
+                    T++;
+                if (pl.TeamNum == 3)
+                    CT++;
+            }
+        }
+
+        RegisterEventHandler<EventSwitchTeam>((@event, info) =>
+        {
+            if (controller.TeamNum == 1)
+                SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+
+            if (controller.TeamNum == 2)
+                objBot?.SwitchTeam(CsTeam.CounterTerrorist);
+
+            if (controller.TeamNum == 3)
+                objBot?.SwitchTeam(CsTeam.Terrorist);
+
+            return HookResult.Continue;
+        });
+
+        RegisterEventHandler<EventPlayerTeam>((@event, info) =>
         {
             SendConsoleCommand(T > CT ? kickbotT : kickbotCT);
 
@@ -173,10 +274,32 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             return HookResult.Continue;
         });
 
-        if (T + CT >= Config.PlayersCountForKickBots)
-            SendConsoleCommand(BOT_KICK);
+        RegisterEventHandler<EventRoundStart>((@event, info) =>
+        {
+            int Tl = 0;
+            int CTl = 0;
+            foreach (var pl in players)
+            {
+                if (pl.IsValid && !pl.IsBot && !pl.IsHLTV)
+                {
+                    if (pl.TeamNum == 2)
+                        Tl++;
+                    if (pl.TeamNum == 3)
+                        CTl++;
+                }
+            }
 
+            if (Tl + CTl >= Config.PlayersCountForKickBots)
+                SendConsoleCommand(BOT_KICK);
 
+            if (Tl + CTl < Config.PlayersCountForKickBots)
+            {
+                for (int i = 0; T + CT < Config.BotCount; i++)
+                    SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+            }
+
+            return HookResult.Continue;
+        });
     }
     // match mode <---
     public void MatchMode()
@@ -249,74 +372,5 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         }
         else
             controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
-    }
-
-
-    //[ConsoleCommand("css_btk_endround")]
-    //public void OnRoundEndCommand(CCSPlayerController? controller, CommandInfo command)
-    //{
-    //    if (controller == null) return;
-    //    if (AdminManager.PlayerHasPermissions(controller, Config.AdminPermissinFlags))
-    //    {
-    //        SendConsoleCommand("sv_cheats true");
-    //        SendConsoleCommand("endround");
-    //        SendConsoleCommand("sv_cheats false");
-    //        Server.PrintToChatAll($" {ChatColors.Gold}{controller.PlayerName} {ChatColors.Silver}End this round now!");
-    //    }
-    //    else
-    //        controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
-    //}
-
-
-    [GameEventHandler]
-    public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
-    {
-
-
-        return HookResult.Continue;
-    }
-
-
-    [GameEventHandler]
-    public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
-    {
-        
-
-        return HookResult.Continue;
-    }
-
-
-    [GameEventHandler]
-    public HookResult OnPlayerChangeTeam(EventSwitchTeam @event, GameEventInfo info)
-    {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
-
-        if (isNeedKick)
-        {
-            SendConsoleCommand(BOT_KICK);
-            isNeedKick = false;
-        }
-
-        if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
-        {
-            //SendConsoleCommand(BOT_KICK);
-            SendConsoleCommand("sv_cheats true");
-            SendConsoleCommand("endround");
-            SendConsoleCommand("sv_cheats false");
-        }
-
-        if (T == 0 || CT == 0)
-        {
-            SendConsoleCommand("sv_cheats true");
-            SendConsoleCommand("endround");
-            SendConsoleCommand("sv_cheats false");
-        }
-
-        if (IsBotExists && T > CT && botTeam == 2)
-            Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.CounterTerrorist);
-        else if (IsBotExists && CT > T && botTeam == 3)
-            Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV).ChangeTeam(CsTeam.Terrorist);
-        return HookResult.Continue;
-
     }
 }
