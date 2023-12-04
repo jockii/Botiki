@@ -31,6 +31,9 @@ public class BotikiConfig : BasePluginConfig
     public int PlayersCountForKickBots { get; set; } = 10;
     [JsonPropertyName("BotCount")]
     public int BotCount { get; set; } = 10;
+
+    [JsonPropertyName("DebugMode")]
+    public bool DebugMode { get; set; } = true;
 }
 
 
@@ -44,7 +47,6 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public override string ModuleAuthor => "jockii, VoCs007";
 
     public BotikiConfig Config { get; set; } = new BotikiConfig();
-
 
     public void OnConfigParsed(BotikiConfig config)
     {
@@ -120,10 +122,10 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 SetCVAR("bot_join_after_player", false);
         }
 
-        RegisterEventHandler<EventRoundStart>(OnRoundStart);
-        RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
-        RegisterEventHandler<EventSwitchTeam>(OnSwitchTeam);
-        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        //RegisterEventHandler<EventRoundStart>(OnRoundStart);
+        //RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+        //RegisterEventHandler<EventSwitchTeam>(OnSwitchTeam);
+        //RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
         Console.WriteLine($"====================");
         Console.WriteLine();
@@ -149,8 +151,15 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public void log(string error)
     {
-        Server.PrintToChatAll($" {ChatColors.Darkred}{error}");
-
+        if (Config.DebugMode)
+        {
+            Server.PrintToChatAll($" {ChatColors.LightRed}{error}");
+            Console.WriteLine("##########################  Botiki debug block start  ##########################");
+            Console.WriteLine(error);
+            Console.WriteLine("##########################  Botiki debug block end  ############################");
+        }
+        else
+            return;
     }
 
     public void SendConsoleCommand(string msg)
@@ -184,12 +193,18 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     {
         List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
 
-        string kickbotT = "";
-        string kickbotCT = "";
         int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
         int? botInTER = bots.Find(bot => bot.TeamNum == 2)?.TeamNum;
         int? botCT_UserId = bots.Find(bot => bot.TeamNum == 3)?.UserId;
         int? botInCT = bots.Find(bot => bot.TeamNum == 3)?.TeamNum;
+
+        string kickbotT = $"";
+        string kickbotCT = $"";
+
+        if (botInTER == 2)
+            kickbotT = $"kickid {botT_UserId}";
+        else if (botInCT == 3)
+            kickbotCT = $"kickid {botCT_UserId}";
 
         int CT = 0;
         int CTh = 0;
@@ -200,13 +215,6 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         int SPEC = 0;
         int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
         bool isBotExists = players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV);
-
-        
-
-        if (botInTER == 2)
-            kickbotT = $"kickid {botT_UserId}";
-        else if (botInCT == 3)
-            kickbotCT = $"kickid {botCT_UserId}";
 
         players.ForEach(player =>
         {
