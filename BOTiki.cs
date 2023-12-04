@@ -120,7 +120,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         players.Find(player => player.TeamNum == teamToChange)?.SwitchTeam(teamName);
     }
 
-    (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) PlayersData() 
+    (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) PlayersData()
     {
         List<CCSPlayerController> players = Utilities.GetPlayers();
         List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
@@ -177,7 +177,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             }
         });
 
-        return (T, Tb, Th, CT,CTb, CTh, SPEC, isBotExists, botTeam, kickbotT, kickbotCT);
+        return (T, Tb, Th, CT, CTb, CTh, SPEC, isBotExists, botTeam, kickbotT, kickbotCT);
 
         //return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, kickbotT, kickbotCT);
     }
@@ -250,7 +250,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 if (Th + CTh >= Config.PlayersCountForKickBots)
                     SendConsoleCommand(BOT_KICK);
 
-                if (T + CT <  Config.BotCount)
+                if (T + CT < Config.BotCount)
                 {
                     if (T > CT)
                         SendConsoleCommand(BOT_ADD_CT);
@@ -258,7 +258,18 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         SendConsoleCommand(BOT_ADD_T);
                 }
 
-                if(!IsBotExists && (T + CT) < Config.PlayersCountForKickBots)
+                if ( T > CT && T + CT < Config.BotCount)
+                {
+                    SendConsoleCommand(kickbotT);
+                    SendConsoleCommand(BOT_ADD_CT);
+                }
+                else if (CT > T && T + CT < Config.BotCount)
+                {
+                    SendConsoleCommand(kickbotCT);
+                    SendConsoleCommand(BOT_ADD_T);
+                }
+
+                if (!IsBotExists && (T + CT) < Config.PlayersCountForKickBots)
                 {
                     for (int i = 0; (T + CT) < Config.BotCount; i++)
                     {
@@ -313,8 +324,14 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         switch (Config.PluginMode)
         {
             case "fill":
-                
 
+                //if (!IsBotExists && (T + CT) < Config.PlayersCountForKickBots)
+                //{
+                //    for (int i = 0; (T + CT) < Config.BotCount; i++)
+                //    {
+                //        SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+                //    }
+                //}
 
                 break;
 
@@ -346,15 +363,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             case "fill":
 
-                if (controller == null) return HookResult.Stop; // ???
+                if (controller.TeamNum == 2)
+                    SendConsoleCommand(kickbotT);
+                else if (controller.TeamNum == 3)
+                    SendConsoleCommand(kickbotCT);
 
-                if (controller.IsValid && !controller.IsBot && !controller.IsHLTV)
-                {
-                    if (controller.TeamNum == 2)
-                        SendConsoleCommand(kickbotT);
-                    else if (controller.TeamNum == 3)
-                        SendConsoleCommand(kickbotCT);
-                }
 
                 break;
 
