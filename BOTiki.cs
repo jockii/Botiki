@@ -21,7 +21,7 @@ public class BotikiConfig : BasePluginConfig
     [JsonPropertyName("AdminPermissionFlags")]
     public string AdminPermissionFlags { get; set; } = "@css/kick";
     [JsonPropertyName("PluginMode")]
-    public string PluginMode { get; set; } = "fill";
+    public int PluginMode { get; set; } = 1;  // 1 = fill; 2 = match; 3 = balanced;
     [JsonPropertyName("BotJoinAfterPlayer")]
     public bool BotJoinAfterPlayer { get; set; } = true;
     [JsonPropertyName("BotsHealth")]
@@ -53,40 +53,40 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     {
         SendConsoleCommand(BOT_KICK);
 
-        if (Config.PluginMode == "fill")
+        if (Config.PluginMode == 1)
         {
             SendConsoleCommand(BOT_MODE_FILL);
             SetCVAR("bot_quota", Config.BotCount);
             //SendConsoleCommand(BOT_ADD);
 
             if (Config.BotJoinAfterPlayer)
-                SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+                SetCVAR("bot_join_after_player", 1);
             else
-                SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
+                SetCVAR("bot_join_after_player", 0);
         }
 
-        if (Config.PluginMode == "match")
+        if (Config.PluginMode == 2)
         {
             SendConsoleCommand(BOT_MODE_MATCH);
             SetCVAR("bot_quota", Config.BotCount);
             //SendConsoleCommand(BOT_ADD);
 
             if (Config.BotJoinAfterPlayer)
-                SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+                SetCVAR("bot_join_after_player", 1);
             else
-                SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
+                SetCVAR("bot_join_after_player", 0);
         }
 
-        if (Config.PluginMode == "balanced")
+        if (Config.PluginMode == 3)
         {
             SendConsoleCommand(BOT_MODE_FILL);
             SetCVAR("bot_quota", 1);
             //SendConsoleCommand(BOT_ADD);
 
             if (Config.BotJoinAfterPlayer)
-                SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
+                SetCVAR("bot_join_after_player", 1);
             else
-                SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
+                SetCVAR("bot_join_after_player", 0);
         }
 
         RegisterEventHandler<EventRoundStart>(OnRoundStart);
@@ -124,7 +124,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public void SetCVAR(string convar, int value)
     {
         var CVar = ConVar.Find(convar);
-        CVar?.SetValue(value);
+        CVar!.GetPrimitiveValue<int>() = value;
 
     }
     public void ChangePlayerTeamSide(List<CCSPlayerController> players, CsTeam teamName)
@@ -258,7 +258,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         switch (Config.PluginMode)
         {
-            case "fill":
+            case 1:
 
                 if (Th + CTh >= Config.PlayersCountForKickBots)
                     SendConsoleCommand(BOT_KICK);
@@ -293,11 +293,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 break;
 
-            case "match":
+            case 2:
                 //code
                 break;
 
-            case "balanced":
+            case 3:
                 // add or kick bot
                 if (IsBotExists)
                 {
@@ -337,7 +337,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         switch (Config.PluginMode)
         {
-            case "fill":
+            case 1:
 
                 //if (!IsBotExists && (T + CT) < Config.PlayersCountForKickBots)
                 //{
@@ -349,11 +349,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 break;
 
-            case "match":
+            case 2:
                 //code
                 break;
 
-            case "balanced":
+            case 3:
                 //code
                 break;
 
@@ -375,7 +375,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         switch (Config.PluginMode)
         {
-            case "fill":
+            case 1:
 
                 if (controller.TeamChanged)
                 {
@@ -388,11 +388,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 break;
 
-            case "match":
+            case 2:
                 //code
                 break;
 
-            case "balanced":
+            case 3:
                 if (isNeedKick)
                 {
                     SendConsoleCommand(BOT_KICK);
@@ -445,18 +445,18 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         switch (Config.PluginMode)
         {
-            case "fill":
+            case 1:
 
                 if (T + CT < Config.BotCount)
                     SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
 
                 break;
 
-            case "match":
+            case 2:
                 //code
                 break;
 
-            case "balanced":
+            case 3:
                 //code
                 break;
 
