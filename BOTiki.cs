@@ -150,17 +150,30 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         players.ForEach(player =>
         {
-            if (player.TeamNum == 2)
+            if (player == null) return;
+
+            if (player.IsValid && !player.IsHLTV)
             {
-                Tb++;
-                Th++;
-                T++;
+                if (player.TeamNum == 2)
+                    T++;
+                else if (player.TeamNum == 3)
+                    CT++;
             }
-            else if (player.TeamNum == 3)
+
+            if (player.IsValid && !player.IsBot && !player.IsHLTV)
             {
-                CTh++;
-                CTb++;
-                CT++;
+                if (player.TeamNum == 2)
+                    Th++;
+                else if (player.TeamNum == 3)
+                    CTh++;
+            }
+
+            if (player.IsValid && player.IsBot && !player.IsHLTV)
+            {
+                if (player.TeamNum == 2)
+                    Tb++;
+                else if (player.TeamNum == 3)
+                    CTb++;
             }
         });
 
@@ -234,7 +247,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             case "fill":
 
-                if (T + CT >= Config.PlayersCountForKickBots)
+                if (Th + CTh >= Config.PlayersCountForKickBots)
                     SendConsoleCommand(BOT_KICK);
 
                 if (T + CT <  Config.PlayersCountForKickBots)
@@ -243,6 +256,14 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         SendConsoleCommand(BOT_ADD_CT);
                     if (CT > T)
                         SendConsoleCommand(BOT_ADD_T);
+                }
+
+                if(!IsBotExists && T + CT < Config.PlayersCountForKickBots)
+                {
+                    for (int i = 0; (T + CT) < Config.BotCount; i++)
+                    {
+                        SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+                    }
                 }
 
                 break;
