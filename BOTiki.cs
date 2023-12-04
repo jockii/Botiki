@@ -250,7 +250,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 if (Th + CTh >= Config.PlayersCountForKickBots)
                     SendConsoleCommand(BOT_KICK);
 
-                if (T + CT <  Config.PlayersCountForKickBots)
+                if (T + CT <  Config.BotCount)
                 {
                     if (T > CT)
                         SendConsoleCommand(BOT_ADD_CT);
@@ -258,7 +258,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         SendConsoleCommand(BOT_ADD_T);
                 }
 
-                if(!IsBotExists && T + CT < Config.PlayersCountForKickBots)
+                if(!IsBotExists && (T + CT) < Config.PlayersCountForKickBots)
                 {
                     for (int i = 0; (T + CT) < Config.BotCount; i++)
                     {
@@ -417,7 +417,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             case "fill":
 
-                if (T + CT < Config.PlayersCountForKickBots)
+                if (T + CT < Config.BotCount)
                     SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
 
                 break;
