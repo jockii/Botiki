@@ -17,7 +17,7 @@ namespace Botiki;
 public class BotikiConfig : BasePluginConfig
 {
     [JsonPropertyName("AdminPermissionFlags")]
-    public string AdminPermissionFlags { get; set; } = "css/example-flag";
+    public string AdminPermissionFlags { get; set; } = "css/kick";
     [JsonPropertyName("PluginMode")]
     public string PluginMode { get; set; } = "fill";
     [JsonPropertyName("BotJoinAfterPlayer")]
@@ -114,34 +114,24 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     {
         Server.ExecuteCommand(msg);
     }
-    public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
+    public void ChangePlayerTeamSide(List<CCSPlayerController> players, CsTeam teamName)
     {
         int teamToChange = teamName == CsTeam.Terrorist ? 3 : 2;
-        realPlayers.Find(player => player.TeamNum == teamToChange)?.SwitchTeam(teamName);
+        players.Find(player => player.TeamNum == teamToChange)?.SwitchTeam(teamName);
     }
 
-    (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) GetPlayersCount(List<CCSPlayerController> players)
+    (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) PlayersData() //(int T, int CT, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT)
     {
+        List<CCSPlayerController> players = Utilities.GetPlayers();
         List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
+        List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
 
         int CT = 0;
         int T = 0;
         int SPEC = 0;
         int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
+        bool isBotExists = players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV);
 
-        realPlayers.ForEach(player =>
-        {
-            if (player.TeamNum == 2)
-                T++;
-            else if (player.TeamNum == 3)
-                CT++;
-        });
-
-        return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, realPlayers);
-    }
-    (string kickbotT, string kickbotCT) KickOneBot(List<CCSPlayerController> players)
-    {
-        List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
         string kickbotT = "";
         string kickbotCT = "";
         int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
@@ -154,8 +144,19 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         else if (botInCT == 3)
             kickbotCT = $"kickid {botCT_UserId}";
 
-        return (kickbotT, kickbotCT);
+        realPlayers.ForEach(player =>
+        {
+            if (player.TeamNum == 2)
+                T++;
+            else if (player.TeamNum == 3)
+                CT++; 
+        });
+
+        return (T, CT, SPEC, isBotExists, botTeam, kickbotT, kickbotCT);
+
+        //return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, kickbotT, kickbotCT);
     }
+
     public void SetBotHp(List<CCSPlayerController> players)
     {
         RegisterEventHandler<EventRoundStart>((@event, info) =>
@@ -165,9 +166,9 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 if (player.IsValid && player.IsBot && !player.IsHLTV)
                 {
                     if (Config.BotsHealth >= MIN_BOT_HP && Config.BotsHealth <= MAX_BOT_HP)
-                        player.Pawn.Value.Health = Config.BotsHealth;
+                        player.Pawn.Value!.Health = Config.BotsHealth;
                     else if (Config.BotsHealth < MIN_BOT_HP || Config.BotsHealth > MAX_BOT_HP)
-                        player.Pawn.Value.Health = STANDART_BOT_HP;
+                        player.Pawn.Value!.Health = STANDART_BOT_HP;
                 }
             });
 
@@ -175,54 +176,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         });
     }
 
-    public void GlobalSpawner()
-    {
-        if (Config.PluginMode == "fill")
-        {
-            // addbot in fill mode
-        }
-
-        if (Config.PluginMode == "match")
-        {
-            // addbot in match mode
-        }
-
-        if (Config.PluginMode == "balanced")
-        {
-            // addbot in balanced mode
-            if ((T + CT) % 2 != 0)
-                SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
-        }
-    }
-    public void GlobalKicker()
-    {
-        if (Config.PluginMode == "fill")
-        {
-            // kick bot in fill mode
-        }
-
-        if (Config.PluginMode == "match")
-        {
-            // kick bot in match mode
-        }
-
-        if (Config.PluginMode == "balanced")
-        {
-            // kick func (balanced mode)
-            if ((T + CT) % 2 == 0)
-                SendConsoleCommand(BOT_KICK);
-
-            if (T + CT >= Config.PlayersCountForKickBots)
-                SendConsoleCommand(BOT_KICK);
-
-            if (T + CT == 0)
-                SendConsoleCommand(BOT_KICK);
-        }
-    }
-
     public void Checker()
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+
+        var players = Utilities.GetPlayers().FindAll(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV);
 
         if (Config.PluginMode == "fill")
         {
@@ -238,18 +196,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             // switcher real players
             if (T > 1 && CT == 0)
-                ChangePlayerTeamSide(realPlayers, CsTeam.CounterTerrorist);
+                ChangePlayerTeamSide(players, CsTeam.CounterTerrorist);
             if (CT > 1 && T == 0)
-                ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
-            // add or kick bot
-            if (IsBotExists)
-            {
-                GlobalKicker();
-            }
-            else
-            {
-                GlobalSpawner();
-            }
+                ChangePlayerTeamSide(players, CsTeam.Terrorist);
+
+            
         }
     }
 
@@ -298,19 +249,47 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        if (Config.PluginMode == "fill")
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+
+        //set bot hp
+        SetBotHp(Utilities.GetPlayers());
+
+        switch (Config.PluginMode)
         {
+            case "fill":
+                //code
+                break;
 
-        }
+            case "match":
+                //code
+                break;
 
-        if (Config.PluginMode == "match")
-        {
+            case "balanced":
+                // add or kick bot
+                if (IsBotExists)
+                {
+                    // kick func (balanced mode)
+                    if ((T + CT) % 2 == 0)
+                        SendConsoleCommand(BOT_KICK);
 
-        }
+                    if (T + CT >= Config.PlayersCountForKickBots)
+                        SendConsoleCommand(BOT_KICK);
 
-        if (Config.PluginMode == "balanced")
-        {
+                    if (T + CT == 0)
+                        SendConsoleCommand(BOT_KICK);
+                }
+                else
+                {
+                    // addbot in balanced mode
+                    if ((T + CT) % 2 != 0)
+                        SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+                }
+                break;
 
+
+            default:
+                Console.WriteLine("Error confign mode");
+                break;
         }
 
         return HookResult.Continue;
@@ -319,19 +298,24 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        if (Config.PluginMode == "fill")
+        switch(Config.PluginMode)
         {
+            case "fill":
+                //code
+                break;
 
-        }
+            case "match":
+                //code
+                break;
 
-        if (Config.PluginMode == "match")
-        {
+            case "balanced":
+                //code
+                break;
 
-        }
 
-        if (Config.PluginMode == "balanced")
-        {
-
+            default:
+                Console.WriteLine("Error confign mode");
+                break;
         }
 
         return HookResult.Continue;
@@ -340,43 +324,50 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnSwitchTeam(EventSwitchTeam @event, GameEventInfo info)
     {
-        if (Config.PluginMode == "fill")
+        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+
+        switch (Config.PluginMode)
         {
+            case "fill":
+                //code
+                break;
 
-        }
+            case "match":
+                //code
+                break;
 
-        if (Config.PluginMode == "match")
-        {
+            case "balanced":
+                if (isNeedKick)
+                {
+                    SendConsoleCommand(BOT_KICK);
+                    isNeedKick = false;
+                }
 
-        }
+                if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
+                {
+                    //SendConsoleCommand(BOT_KICK);
+                    SendConsoleCommand("sv_cheats true");
+                    SendConsoleCommand("endround");
+                    SendConsoleCommand("sv_cheats false");
+                }
 
-        if (Config.PluginMode == "balanced")
-        {
-            if (isNeedKick)
-            {
-                SendConsoleCommand(BOT_KICK);
-                isNeedKick = false;
-            }
+                if (T == 0 || CT == 0)
+                {
+                    SendConsoleCommand("sv_cheats true");
+                    SendConsoleCommand("endround");
+                    SendConsoleCommand("sv_cheats false");
+                }
 
-            if (((T == 0 && CT == 1) || (CT == 0 && T == 1)) && IsBotExists)
-            {
-                //SendConsoleCommand(BOT_KICK);
-                SendConsoleCommand("sv_cheats true");
-                SendConsoleCommand("endround");
-                SendConsoleCommand("sv_cheats false");
-            }
+                if (IsBotExists && T > CT && botTeam == 2)
+                    Utilities.GetPlayers()?.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.ChangeTeam(CsTeam.CounterTerrorist);
+                else if (IsBotExists && CT > T && botTeam == 3)
+                    Utilities.GetPlayers()?.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.ChangeTeam(CsTeam.Terrorist);
+                break;
 
-            if (T == 0 || CT == 0)
-            {
-                SendConsoleCommand("sv_cheats true");
-                SendConsoleCommand("endround");
-                SendConsoleCommand("sv_cheats false");
-            }
 
-            if (IsBotExists && T > CT && botTeam == 2)
-                Utilities.GetPlayers()?.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.ChangeTeam(CsTeam.CounterTerrorist);
-            else if (IsBotExists && CT > T && botTeam == 3)
-                Utilities.GetPlayers()?.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.ChangeTeam(CsTeam.Terrorist);
+            default:
+                Console.WriteLine("Error confign mode");
+                break;
         }
 
         return HookResult.Continue;
@@ -385,19 +376,24 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
     {
-        if (Config.PluginMode == "fill")
+        switch (Config.PluginMode)
         {
+            case "fill":
+                //code
+                break;
 
-        }
+            case "match":
+                //code
+                break;
 
-        if (Config.PluginMode == "match")
-        {
+            case "balanced":
+                //code
+                break;
 
-        }
 
-        if (Config.PluginMode == "balanced")
-        {
-
+            default:
+                Console.WriteLine("Error confign mode");
+                break;
         }
 
         return HookResult.Continue;
