@@ -4,6 +4,7 @@ using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ namespace Botiki;
 public class BotikiConfig : BasePluginConfig
 {
     [JsonPropertyName("AdminPermissionFlags")]
-    public string AdminPermissionFlags { get; set; } = "css/kick";
+    public string AdminPermissionFlags { get; set; } = "@css/kick";
     [JsonPropertyName("PluginMode")]
     public string PluginMode { get; set; } = "fill";
     [JsonPropertyName("BotJoinAfterPlayer")]
@@ -55,8 +56,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         if (Config.PluginMode == "fill")
         {
             SendConsoleCommand(BOT_MODE_FILL);
-            SendConsoleCommand($"bot_quota {Config.BotCount}");
-            SendConsoleCommand(BOT_ADD);
+            SetCVAR("bot_quota", Config.BotCount);
+            //SendConsoleCommand(BOT_ADD);
 
             if (Config.BotJoinAfterPlayer)
                 SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
@@ -67,8 +68,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         if (Config.PluginMode == "match")
         {
             SendConsoleCommand(BOT_MODE_MATCH);
-            SendConsoleCommand($"bot_quota {Config.BotCount}");
-            SendConsoleCommand(BOT_ADD);
+            SetCVAR("bot_quota", Config.BotCount);
+            //SendConsoleCommand(BOT_ADD);
 
             if (Config.BotJoinAfterPlayer)
                 SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
@@ -79,8 +80,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         if (Config.PluginMode == "balanced")
         {
             SendConsoleCommand(BOT_MODE_FILL);
-            SendConsoleCommand(BOT_QUOTA_1);
-            SendConsoleCommand(BOT_ADD);
+            SetCVAR("bot_quota", 1);
+            //SendConsoleCommand(BOT_ADD);
 
             if (Config.BotJoinAfterPlayer)
                 SendConsoleCommand(BOT_JOIN_AFTER_PLAYER);
@@ -118,6 +119,13 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public void SendConsoleCommand(string msg)
     {
         Server.ExecuteCommand(msg);
+    }
+
+    public void SetCVAR(string convar, int value)
+    {
+        var CVar = ConVar.Find(convar);
+        CVar?.SetValue(value);
+
     }
     public void ChangePlayerTeamSide(List<CCSPlayerController> players, CsTeam teamName)
     {
@@ -371,7 +379,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 if (controller.TeamChanged)
                 {
-                    if (controller.TeamNum == 2)
+                    if (controller.TeamNum == 2 && controller.InSwitchTeam)
                         SendConsoleCommand(kickbotT);
                     else if (controller.TeamNum == 3)
                         SendConsoleCommand(kickbotCT);
