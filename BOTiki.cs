@@ -8,6 +8,7 @@ using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -44,6 +45,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public BotikiConfig Config { get; set; } = new BotikiConfig();
 
+
     public void OnConfigParsed(BotikiConfig config)
     {
         Config = config;
@@ -56,37 +58,66 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         if (Config.PluginMode == 1)
         {
             SendConsoleCommand(BOT_MODE_FILL);
-            SetCVAR("bot_quota", Config.BotCount);
-            //SendConsoleCommand(BOT_ADD);
+            try
+            {
+                string _bot_count = Config.BotCount.ToString();
+                SendConsoleCommand($"bot_quota {_bot_count}");
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("##############################################################");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("##############################################################");
+            }
+
+
 
             if (Config.BotJoinAfterPlayer)
-                SetCVAR("bot_join_after_player", 1);
+                SetCVAR("bot_join_after_player", true);
             else
-                SetCVAR("bot_join_after_player", 0);
+                SetCVAR("bot_join_after_player", false);
         }
 
         if (Config.PluginMode == 2)
         {
             SendConsoleCommand(BOT_MODE_MATCH);
-            SetCVAR("bot_quota", Config.BotCount);
-            //SendConsoleCommand(BOT_ADD);
+            try
+            {
+                SendConsoleCommand($"bot_quota {Config.BotCount.ToString()}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("##############################################################");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("##############################################################");
+            }
+
 
             if (Config.BotJoinAfterPlayer)
-                SetCVAR("bot_join_after_player", 1);
+                SetCVAR("bot_join_after_player", true);
             else
-                SetCVAR("bot_join_after_player", 0);
+                SetCVAR("bot_join_after_player", false);
         }
 
         if (Config.PluginMode == 3)
         {
             SendConsoleCommand(BOT_MODE_FILL);
-            SetCVAR("bot_quota", 1);
-            //SendConsoleCommand(BOT_ADD);
+            try
+            {
+                SendConsoleCommand($"bot_quota 1");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("##############################################################");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("##############################################################");
+            }
 
             if (Config.BotJoinAfterPlayer)
-                SetCVAR("bot_join_after_player", 1);
+                SetCVAR("bot_join_after_player", true);
             else
-                SetCVAR("bot_join_after_player", 0);
+                SetCVAR("bot_join_after_player", false);
         }
 
         RegisterEventHandler<EventRoundStart>(OnRoundStart);
@@ -116,15 +147,31 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public const int MAX_BOT_HP = 9999999;
     public bool isNeedKick = true;
 
+    public void log(string error)
+    {
+        Server.PrintToChatAll($" {ChatColors.Darkred}{error}");
+
+    }
+
     public void SendConsoleCommand(string msg)
     {
         Server.ExecuteCommand(msg);
     }
 
-    public void SetCVAR(string convar, int value)
+    public void SetCVAR(string convar, bool value)
     {
-        var CVar = ConVar.Find(convar);
-        CVar!.GetPrimitiveValue<int>() = value;
+        try
+        {
+            var CVar = ConVar.Find(convar);
+            if (CVar == null) return;
+            CVar!.GetPrimitiveValue<bool>() = value;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("##############################################################");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("##############################################################");
+        }
 
     }
     public void ChangePlayerTeamSide(List<CCSPlayerController> players, CsTeam teamName)
@@ -163,15 +210,12 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         players.ForEach(player =>
         {
-            if (player == null) return;
+            if (player == null || player.IsHLTV || !player.IsValid) return;
 
-            if (player.IsValid && !player.IsHLTV)
-            {
-                if (player.TeamNum == 2)
-                    T++;
-                else if (player.TeamNum == 3)
-                    CT++;
-            }
+            if (player.TeamNum == 2)
+                T++;
+            else if (player.TeamNum == 3)
+                CT++;
 
             if (player.IsValid && !player.IsBot && !player.IsHLTV)
             {
@@ -192,7 +236,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         return (T, Tb, Th, CT, CTb, CTh, SPEC, isBotExists, botTeam, kickbotT, kickbotCT);
 
-        //return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, kickbotT, kickbotCT);
+        // return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, kickbotT, kickbotCT);
     }
 
     [ConsoleCommand("bothp")]
@@ -256,41 +300,49 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
             }
         });
 
+        log("------ івент раунд старт");
+
         switch (Config.PluginMode)
         {
             case 1:
 
+                log("------ кейс 1");
+
                 if (Th + CTh >= Config.PlayersCountForKickBots)
+                {
                     SendConsoleCommand(BOT_KICK);
+                    log("------ перша іф");
+                }
 
                 if (T + CT < Config.BotCount)
                 {
+                    log("------ друга іф");
                     if (T > CT)
                         SendConsoleCommand(BOT_ADD_CT);
                     if (CT > T)
                         SendConsoleCommand(BOT_ADD_T);
                 }
 
-                if ( T > CT && T + CT <= Config.BotCount)
+
+                if (T > CT && T + CT > Config.BotCount)
                 {
+                    log("------ третя іф");
                     SendConsoleCommand(kickbotT);
-                    SendConsoleCommand(BOT_ADD_CT);
                 }
-
-                if (CT > T && T + CT <= Config.BotCount)
+                if (CT > T && T + CT > Config.BotCount)
                 {
+                    log("------ четверта іф");
                     SendConsoleCommand(kickbotCT);
-                    SendConsoleCommand(BOT_ADD_T);
                 }
-
-                if (!IsBotExists && (T + CT) < Config.PlayersCountForKickBots)
+                if (!IsBotExists && (T + CT) < Config.BotCount)
                 {
+                    log("------ пята іф");
                     for (int i = 0; (T + CT) < Config.BotCount; i++)
                     {
                         SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
                     }
                 }
-
+                log("------ брейк");
                 break;
 
             case 2:
@@ -321,7 +373,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
 
             default:
-                Console.WriteLine("Error confign mode");
+                Console.WriteLine("Error config mode");
                 break;
         }
 
@@ -373,19 +425,26 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
+        log("------ івент свіч тім");
+
         switch (Config.PluginMode)
         {
             case 1:
 
-                if (controller.TeamChanged)
+                log("------ кейс 1");
+
+                if (controller.TeamChanged && controller.TeamNum == 2)
                 {
-                    if (controller.TeamNum == 2 && controller.InSwitchTeam)
-                        SendConsoleCommand(kickbotT);
-                    else if (controller.TeamNum == 3)
-                        SendConsoleCommand(kickbotCT);
+                    log("------ перша іф");
+                    SendConsoleCommand(kickbotT);
+                }
+                if (controller.TeamChanged && controller.TeamNum == 3)
+                {
+                    log("------ друга іф");
+                    SendConsoleCommand(kickbotCT);
                 }
 
-
+                log("------ кейс breack");
                 break;
 
             case 2:
