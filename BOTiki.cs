@@ -6,6 +6,7 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -87,6 +88,10 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 SendConsoleCommand(BOT_NOT_JOIN_AFTER_PLAYER);
         }
 
+        RegisterEventHandler<EventRoundStart>(OnRoundStart);
+        RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+        RegisterEventHandler<EventSwitchTeam>(OnSwitchTeam);
+        RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
 
         Console.WriteLine($"====================");
         Console.WriteLine();
@@ -258,12 +263,13 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         SendConsoleCommand(BOT_ADD_T);
                 }
 
-                if ( T > CT && T + CT < Config.BotCount)
+                if ( T > CT && T + CT <= Config.BotCount)
                 {
                     SendConsoleCommand(kickbotT);
                     SendConsoleCommand(BOT_ADD_CT);
                 }
-                else if (CT > T && T + CT < Config.BotCount)
+
+                if (CT > T && T + CT <= Config.BotCount)
                 {
                     SendConsoleCommand(kickbotCT);
                     SendConsoleCommand(BOT_ADD_T);
@@ -363,10 +369,13 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             case "fill":
 
-                if (controller.TeamNum == 2)
-                    SendConsoleCommand(kickbotT);
-                else if (controller.TeamNum == 3)
-                    SendConsoleCommand(kickbotCT);
+                if (controller.TeamChanged)
+                {
+                    if (controller.TeamNum == 2)
+                        SendConsoleCommand(kickbotT);
+                    else if (controller.TeamNum == 3)
+                        SendConsoleCommand(kickbotCT);
+                }
 
 
                 break;
