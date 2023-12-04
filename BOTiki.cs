@@ -180,11 +180,16 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         players.Find(player => player.TeamNum == teamToChange)?.SwitchTeam(teamName);
     }
 
-    (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) PlayersData()
+    (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) PlayersData(List<CCSPlayerController> players)
     {
-        List<CCSPlayerController> players = Utilities.GetPlayers();
-        List<CCSPlayerController> realPlayers = players.FindAll(player => !player.IsBot);
         List<CCSPlayerController> bots = players.FindAll(player => player.IsValid && player.IsBot && !player.IsHLTV);
+
+        string kickbotT = "";
+        string kickbotCT = "";
+        int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
+        int? botInTER = bots.Find(bot => bot.TeamNum == 2)?.TeamNum;
+        int? botCT_UserId = bots.Find(bot => bot.TeamNum == 3)?.UserId;
+        int? botInCT = bots.Find(bot => bot.TeamNum == 3)?.TeamNum;
 
         int CT = 0;
         int CTh = 0;
@@ -196,12 +201,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
         bool isBotExists = players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV);
 
-        string kickbotT = "";
-        string kickbotCT = "";
-        int? botT_UserId = bots.Find(bot => bot.TeamNum == 2)?.UserId;
-        int? botInTER = bots.Find(bot => bot.TeamNum == 2)?.TeamNum;
-        int? botCT_UserId = bots.Find(bot => bot.TeamNum == 3)?.UserId;
-        int? botInCT = bots.Find(bot => bot.TeamNum == 3)?.TeamNum;
+        
 
         if (botInTER == 2)
             kickbotT = $"kickid {botT_UserId}";
@@ -284,7 +284,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(Utilities.GetPlayers());
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
@@ -383,7 +383,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
-        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(Utilities.GetPlayers());
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
@@ -421,7 +421,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnSwitchTeam(EventSwitchTeam @event, GameEventInfo info)
     {
-        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(Utilities.GetPlayers());
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
@@ -497,7 +497,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     [GameEventHandler]
     public HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
     {
-        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData();
+        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(Utilities.GetPlayers());
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
