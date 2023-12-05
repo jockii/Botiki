@@ -48,9 +48,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public BotikiConfig Config { get; set; } = new BotikiConfig();
 
+    public int quota;
     public void OnConfigParsed(BotikiConfig config)
     {
         Config = config;
+        quota = Config.BotCount;
     }
 
     public override void Load(bool hotReload)
@@ -323,56 +325,83 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                     log("------ перша іф");
                 }
 
-                if (T + CT < Config.BotCount)
+                //     5   >   4
+                if (T + CT > quota)
+                {
+                    if (T > CT)
+                    {
+                        // try $"bot_kick {.PlayerName}" 
+                        ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId!;
+                        SendConsoleCommand($"kickid {botID}");
+                    }
+                    if (CT > T)
+                    {
+                        ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId!;
+                        SendConsoleCommand($"kickid {botID}");
+                    }
+                }
+
+                if (T + CT < quota)
                 {
                     log("------ друга іф");
-                    if (T > CT && (T + CT) < Config.BotCount)
+                    if (T > CT && (T + CT) < quota)
                     {
                         SendConsoleCommand(BOT_ADD_CT);
                         log("------ друга іф = bot add ct");
                     }
-                    if (CT > T && (T + CT) < Config.BotCount)
+                    if (CT > T && (T + CT) < quota)
                     {
                         SendConsoleCommand(BOT_ADD_T);
                         log("------ друга іф = bot add t");
                     }
                 }
 
-                if (T > CT && T + CT > Config.BotCount)
-                {
-                    log("------ третя іф == kick bot t");
-                    SendConsoleCommand($"kickid {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId}");
-                }
-                if (CT > T && T + CT > Config.BotCount)
-                {
-                    log("------ четверта іф = kick bot ct");
-                    SendConsoleCommand($"kickid {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId}");
-                }
-                if (!IsBotExists && (T + CT) < Config.BotCount)
+                //if (T > CT && T + CT > Config.BotCount)
+                //{
+                //    log("------ третя іф == kick bot t");
+                //    ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId!;
+                //    SendConsoleCommand($"kickid {botID}");
+                //}
+                //if (CT > T && T + CT > Config.BotCount)
+                //{
+                //    log("------ четверта іф = kick bot ct");
+                //    ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId!;
+                //    SendConsoleCommand($"kickid {botID}");
+                //}
+
+                if (!IsBotExists && (T + CT) < quota)
                 {
                     log("------ пята іф == loop for add bot T or CT");
-                    for (int i = 0; (T + CT) < Config.BotCount; i++)
+                    for (int i = T + CT; i < quota; i++)
                     {
                         SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
                     }
                 }
 
-                if ((T + CT) == Config.BotCount && T != CT)
-                {
-                    if (T > CT)
-                    {
-                        // kick T; add CT
-                        SendConsoleCommand($"kickid {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId}");
-                        SendConsoleCommand(BOT_ADD_CT);
-                    }
+                //if (T + CT <= Config.BotCount && T != CT)
+                //{
+                //    for (int i = T + CT; i > Config.BotCount; i++)
+                //    {
+                //        log("------ шоста іф");
+                //        if (T > CT)
+                //        {
+                //            log("------ шоста іф == 1");
+                //            // kick T; add CT
+                //            ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId!;
+                //            SendConsoleCommand($"kickid {botID}");
+                //            SendConsoleCommand(BOT_ADD_CT);
+                //        }
 
-                    if (CT > T)
-                    {
-                        // kick CT; add T
-                        SendConsoleCommand($"kickid {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId}");
-                        SendConsoleCommand(BOT_ADD_T);
-                    }
-                }
+                //        if (CT > T)
+                //        {
+                //            log("------ шоста іф == 2");
+                //            // kick CT; add T
+                //            ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId!;
+                //            SendConsoleCommand($"kickid {botID}");
+                //            SendConsoleCommand(BOT_ADD_T);
+                //        }
+                //    }
+                //}
 
                 log("------ брейк");
                 break;
@@ -419,6 +448,9 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(players);
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
+
+        if (quota > Config.BotCount)
+            quota = Config.BotCount;
 
         switch (Config.PluginMode)
         {
@@ -467,15 +499,29 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 log("------ кейс 1");
 
+                if (controller == null) return HookResult.Continue;
+
+                if (controller!.TeamChanged && controller.TeamNum == 1)
+                {
+                    log("------ switch to SPEC");
+                    if (T + CT <= quota || T + CT > quota)
+                    {
+                        log("------ return HookResult.Continue");
+                        return HookResult.Continue;
+                    }
+                }
+
                 if (controller.TeamChanged && controller.TeamNum == 2)
                 {
                     log("------ перша іф");
-                    SendConsoleCommand($"kickid {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId}");
+                    ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).UserId!;
+                    SendConsoleCommand($"kickid {botID}");
                 }
                 if (controller.TeamChanged && controller.TeamNum == 3)
                 {
                     log("------ друга іф");
-                    SendConsoleCommand($"kickid {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId}");
+                    ushort botID = (ushort)Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).UserId!;
+                    SendConsoleCommand($"kickid {botID}");
                 }
 
                 log("------ кейс breack");
@@ -536,6 +582,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
+        quota = quota + 1;
 
         switch (Config.PluginMode)
         {
@@ -543,6 +590,40 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 //if (T + CT < Config.BotCount)
                 //    SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
+
+                break;
+
+            case 2:
+                //code
+                break;
+
+            case 3:
+                //code
+                break;
+
+
+            default:
+                Console.WriteLine("Error confign mode");
+                break;
+        }
+
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler(mode: HookMode.Post)]
+    public HookResult OnPlayerConnect(EventPlayerConnect @event, GameEventInfo info)
+    {
+        var players = Utilities.GetPlayers();
+        (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(players);
+
+        CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
+
+        quota = quota - 1;
+
+        switch (Config.PluginMode)
+        {
+            case 1:
+
 
                 break;
 
