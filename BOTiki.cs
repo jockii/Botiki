@@ -47,12 +47,9 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public BotikiConfig Config { get; set; } = new BotikiConfig();
 
-    public int quota;
-
     public void OnConfigParsed(BotikiConfig config)
     {
         Config = config;
-        quota = Config.BotCount;
     }
     public override void Load(bool hotReload)
     {
@@ -151,7 +148,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public bool isNeedKick = true;
     public bool isFirstPlayer = true;
 
-    
+    static int quota = Config.BotCount; //  ????
 
     public void SetBotCount()
     {
@@ -305,20 +302,16 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(players);
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
-
-
-        /////   Треба поробити цикли шо б удаляло скільки треба а не одного бота
-
         
 
-        if (quota > Config.BotCount)
-            quota = Config.BotCount;
+        if (Kvota > Config.BotCount)
+            Kvota = Config.BotCount;
 
         if (T + CT > Config.BotCount)
         {
             string _bot_count = Config.BotCount.ToString();
             SendConsoleCommand($"bot_quota {_bot_count}");
-            quota = Config.BotCount;
+            Kvota = Config.BotCount;
         }
 
         //set bot hp
@@ -348,7 +341,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 }
 
                 //      need kick bot
-                if (Tb + CTb > quota)
+                if (Tb + CTb > Kvota)
                 {
                     log("------ if #2");
                     if (Tb > CTb)
@@ -375,7 +368,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 }
 
                 //      need add bot
-                if (Tb + CTb < quota)
+                if (Tb + CTb < Kvota)
                 {
                     log("------ if #3");
                     if (Tb > CTb)
@@ -397,7 +390,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         }
                     }
                 }
-                if (Th + CTh == 1 && Tb + CTb == quota)
+                if (Th + CTh == 1 && Tb + CTb == Kvota)
                 {
                     log("------ if #4");
 
@@ -505,25 +498,21 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         
 
-        //log("------ @event Switch Team");
+        log("------ @event Switch Team");
 
         switch (Config.PluginMode)
         {
             case 1:
 
-                //log("------ case 1(fill)");
+                log("------ case 1(fill)");
 
                 //if (controller == null) return HookResult.Continue;
 
-                //if (controller!.TeamChanged && controller.TeamNum == 1)
-                //{
-                //    log("------ if #1 go to SPEC");
-                //    if (T + CT <= quota || T + CT > quota)
-                //    {
-                //        log("------ if #1.1 return HookResult.Continue");
-                //        return HookResult.Continue;
-                //    }
-                //}
+                if (controller!.TeamChanged && controller.TeamNum == 1)
+                {
+                    Kvota++;
+                    log("------ if #1 go to SPEC");
+                }
 
                 //if (controller.TeamChanged && controller.TeamNum == 2)
                 //{
@@ -596,9 +585,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        int quota = Config.BotCount;
-
-        quota = quota + 1;
+        Kvota++;
 
         switch (Config.PluginMode)
         {
@@ -634,7 +621,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        
+        Kvota--;
 
         if (isFirstPlayer)
         {
