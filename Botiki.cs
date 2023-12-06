@@ -33,7 +33,7 @@ public class Botiki : BasePlugin
     public override string ModuleVersion => "v1.7.0";
     public override string ModuleAuthor => "jackson tougher, VoCs";
     public Config config = new Config();
-    public override async void Load(bool hotReload)
+    public override void Load(bool hotReload)
     {
         var configPath = Path.Join(ModuleDirectory, "Config.json");
         if (!File.Exists(configPath))
@@ -41,7 +41,6 @@ public class Botiki : BasePlugin
         else
             LoadConfig();
 
-        await Task.Delay(5000);
         StartupParams();
 
     }
@@ -54,6 +53,66 @@ public class Botiki : BasePlugin
     public const int MAX_BOT_HP = 999999;
     public bool IsNeedKick = true;
 
+    (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) GetPlayersCount(List<CCSPlayerController> players)
+    {
+        List<CCSPlayerController> realPlayers = players.FindAll(player => player.IsValid && !player.IsBot);
+        bool isBotExists = players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV);
+        int CT = 0;
+        int CTh = 0;
+        int CTb = 0;
+        int T = 0;
+        int Th = 0;
+        int Tb = 0;
+        int SPEC = 0;
+        int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
+
+        players.ForEach(player =>
+        {
+            if (player == null ||  !player.IsValid) return;
+
+            if (player.IsValid && !player.IsHLTV)
+            {
+                if (player.TeamNum == 1)
+                {
+                    SPEC++;
+                }
+                if (player.TeamNum == 2)
+                {
+                    T++;
+                }
+                if (player.TeamNum == 3)
+                {
+                    CT++;
+                }
+            }
+
+            if (player.IsValid && !player.IsBot && !player.IsHLTV)
+            {
+                if (player.TeamNum == 2)
+                {
+                    Th++;
+                }
+                if (player.TeamNum == 3)
+                {
+                    CTh++;
+                }
+            }
+
+            if (player.IsValid && player.IsBot && !player.IsHLTV)
+            {
+                if (player.TeamNum == 2)
+                {
+                    Tb++;
+                }
+                if (player.TeamNum == 3)
+                {
+                    CTb++;
+                }
+            }
+        });
+
+        return (T, Th, Tb, CT, CTh, CTb, SPEC, isBotExists, botTeam);
+    }
     public void Debug(string logs)
     {
         if (config.DebugMode == 0) return;
@@ -73,8 +132,9 @@ public class Botiki : BasePlugin
         }
 
     }
-    public void StartupParams()
+    public async void StartupParams()
     {
+        await Task.Delay(5000);
         if (config == null)
         {
             Console.WriteLine("No config file!!! Applied defaul settings:");
@@ -128,9 +188,9 @@ public class Botiki : BasePlugin
         var configPath = Path.Join(ModuleDirectory, "Config.json");
         if (!File.Exists(configPath))
         {
-            config.AdminFlag = "@css/botiki";
-            config.PluginMode = 1;
-            config.BotCount = 10;
+            config.AdminFlag = "@css/kick";
+            config.PluginMode = 2;
+            config.BotCount = 4;
             config.BotHealth = 100;
             config.PlayersCountForKickBots = 10;
             config.LastPlayerDisconnectKickBots = true;
@@ -143,10 +203,89 @@ public class Botiki : BasePlugin
         var configPath = Path.Join(ModuleDirectory, "Config.json");
         config = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath))!;
     }
-    public void ChangePlayerTeamSide(List<CCSPlayerController> realPlayers, CsTeam teamName)
+    public void ChangePlayerTeamSide(CsTeam teamName)
     {
         int teamToChange = teamName == CsTeam.Terrorist ? 3 : 2;
-        realPlayers.Find(player => player.TeamNum == teamToChange)?.SwitchTeam(teamName);
+        Utilities.GetPlayers().Find(player => player.IsValid && !player.IsBot && !player.IsHLTV && player.TeamNum == teamToChange)?.SwitchTeam(teamName);
+    }
+    public void FillAdder(int Tb, int CTb)
+    {
+        //      need add bot
+        if (Tb + CTb < config.BotCount)
+        {
+            if (Tb > CTb)
+            {
+                for (int i = Tb - CTb; i == 0; i--)
+                {
+                    SendConsoleCommand(BOT_ADD_CT);
+                }
+            }
+            if (CTb > Tb)
+            {
+                for (int i = CTb - Tb; i == 0; i--)
+                {
+                    SendConsoleCommand(BOT_ADD_T);
+                }
+            }
+        }
+    }
+    public void FillKicker(int T, int CT, int Tb, int Th, int CTb, int CTh)
+    {
+        //      need kick bot
+        if (Th + CTh >= config.PlayersCountForKickBots)
+        {
+            SendConsoleCommand(BOT_KICK);
+        }
+
+        if (Tb + CTb > config.BotCount)
+        {
+            if (Tb > CTb)
+            {
+                // try $"bot_kick {.PlayerName}" 
+                for (int i = Tb - CTb; i == 0; i--)
+                {
+                    SendConsoleCommand($"bot_kick {Utilities.GetPlayers().Find(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2)!.PlayerName}");
+                }
+            }
+            if (CTb > Tb)
+            {
+                for (int i = CTb - Tb; i == 0; i--)
+                {
+                    SendConsoleCommand($"bot_kick {Utilities.GetPlayers().Find(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3)!.PlayerName}");
+                }
+            }
+        }
+
+        if (Th + CTh == 1 && Tb + CTb == config.BotCount)
+        {
+            if (T > CT)
+            {
+                // try $"bot_kick {.PlayerName}" 
+                string botName = Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).PlayerName;
+                SendConsoleCommand($"bot_kick {botName}");
+                SendConsoleCommand(BOT_ADD_CT);
+            }
+            if (CT > T)
+            {
+                string botName = Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).PlayerName;
+                SendConsoleCommand($"bot_kick {botName}");
+                SendConsoleCommand(BOT_ADD_T);
+            }
+        }
+    }
+    public void FillMode(List<CCSPlayerController> players)
+    {
+        (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
+
+        if (T + CT > config.BotCount)
+        {
+            FillKicker(T, CT, Tb, Th, CTb, CTh);
+        }
+        else
+        {
+            FillAdder(Tb, CTb);
+        }
+        
     }
     public void BalancerAdder(int T, int CT)
     {
@@ -179,47 +318,22 @@ public class Botiki : BasePlugin
             SendConsoleCommand(T > CT ? BOT_ADD_T : BOT_ADD_CT);
         }
     }
-    (int T, int CT, int SPEC, bool isBotExists, int? botTeam, List<CCSPlayerController> realPlayers) GetPlayersCount(List<CCSPlayerController> players)
-    {
-        List<CCSPlayerController> realPlayers = players.FindAll(player => player.IsValid && !player.IsBot);
-        bool isBotExists = players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV);
-        int CT = 0;
-        int T = 0;
-        int SPEC = 0;
-        int? botTeam = players.Find(player => player.IsValid && player.IsBot && !player.IsHLTV)?.TeamNum;
-
-        realPlayers.ForEach(player =>
-        {
-            if (player.TeamNum == 1)
-                SPEC++;
-            else if (player.TeamNum == 2)
-                T++;
-            else if (player.TeamNum == 3)
-                CT++;
-        });
-
-        string kickBotNameT = $"bot_kick {players.Find(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2)!.PlayerName}";
-        string kickBotNameCT = $"bot_kick {players.Find(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3)!.PlayerName}";
-
-
-
-        return (T, CT, SPEC, isBotExists, botTeam, realPlayers);
-    }
     public void BalancedMode(List<CCSPlayerController> players)
     {
-        (int T, int CT, int SPEC, bool IsBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(players);
+        (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
+
 
         if (T > 1 && CT == 0)
-            ChangePlayerTeamSide(realPlayers, CsTeam.CounterTerrorist);
+            ChangePlayerTeamSide(CsTeam.CounterTerrorist);
         if (CT > 1 && T == 0)
-            ChangePlayerTeamSide(realPlayers, CsTeam.Terrorist);
+            ChangePlayerTeamSide(CsTeam.Terrorist);
 
-        if (IsBotExists)
+        if (isBotExists)
             BalancedKicker(T, CT);
         else
             BalancerAdder(T, CT);
     }
-
+    
     [ConsoleCommand("bothp", "Set bot Health")]
     [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
     public void OnCommandBotHp(CCSPlayerController? controller, CommandInfo command)
@@ -277,16 +391,7 @@ public class Botiki : BasePlugin
     }
     public void SetBotHp(List<CCSPlayerController> playersList)
     {
-        playersList.ForEach(player =>
-        {
-            if (player.IsValid && player.IsBot && !player.IsHLTV)
-            {
-                if (config.BotHealth >= MIN_BOT_HP && config.BotHealth <= MAX_BOT_HP)
-                    player.Pawn.Value!.Health = config.BotHealth;
-                else if (config.BotHealth < MIN_BOT_HP || config.BotHealth > MAX_BOT_HP)
-                    player.Pawn.Value!.Health = STANDART_BOT_HP;
-            }
-        });
+        
     }
 
     [GameEventHandler(mode: HookMode.Post)]
@@ -296,7 +401,7 @@ public class Botiki : BasePlugin
         {
             case 1:
                 // fill
-
+                FillMode(Utilities.GetPlayers());
                 break;
             case 2:
                 // balanced
@@ -306,7 +411,18 @@ public class Botiki : BasePlugin
                 //  error message about config setting
                 break; 
         }
-        SetBotHp(Utilities.GetPlayers());
+
+        Utilities.GetPlayers().ForEach(player =>
+        {
+            if (player.IsValid && player.IsBot && !player.IsHLTV)
+            {
+                if (config.BotHealth >= MIN_BOT_HP && config.BotHealth <= MAX_BOT_HP)
+                    player.Pawn.Value!.Health = config.BotHealth;
+                else if (config.BotHealth < MIN_BOT_HP || config.BotHealth > MAX_BOT_HP)
+                    player.Pawn.Value!.Health = STANDART_BOT_HP;
+            }
+        });
+
         return HookResult.Continue;
     }
 
@@ -321,7 +437,7 @@ public class Botiki : BasePlugin
     [GameEventHandler(mode: HookMode.Post)]
     public HookResult OnSwitchTeam(EventSwitchTeam @event, GameEventInfo info)
     {
-        (int T, int CT, int SPEC, bool isBotExists, int? botTeam, List<CCSPlayerController> realPlayers) = GetPlayersCount(Utilities.GetPlayers());
+        (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
 
         //if (IsNeedKick)  // working?
         //{
@@ -337,17 +453,17 @@ public class Botiki : BasePlugin
             case 2:
                 // balanced
 
-                if (realPlayers.Count == 1 && isBotExists)
+                if (Th + CTh == 1 && isBotExists)
                 {
                     SendConsoleCommand("sv_cheats true");
                     SendConsoleCommand("endround");
                     SendConsoleCommand("sv_cheats false");
                 }
 
-                if (realPlayers.Count == 1 && botTeam == 2) // isBotExists && T > CT && botTeam == 2
+                if (Th + CTh == 1 && botTeam == 2) // isBotExists && T > CT && botTeam == 2
                     Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV)!.ChangeTeam(CsTeam.CounterTerrorist);
 
-                if (realPlayers.Count == 1 && botTeam == 3) // isBotExists && T > CT && botTeam == 3
+                if (Th + CTh == 1 && botTeam == 3) // isBotExists && T > CT && botTeam == 3
                     Utilities.GetPlayers().Find(player => player.IsValid && player.IsBot && !player.IsHLTV)!.ChangeTeam(CsTeam.Terrorist);
                 break;
 
