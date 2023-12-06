@@ -7,9 +7,4 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
-  <ItemGroup>
-    
-    </Reference>
-  </ItemGroup>
-
 </Project>
