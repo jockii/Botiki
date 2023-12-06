@@ -8,8 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="CounterStrikeSharp.API">
-      <HintPath>CounterStrikeSharp.API.dll</HintPath>
+    
     </Reference>
   </ItemGroup>
 
