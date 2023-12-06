@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Botiki;
+
 public class BotikiConfig : BasePluginConfig
 {
     [JsonPropertyName("AdminPermissionFlags")]
@@ -39,7 +40,6 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public override string ModuleAuthor => "jockii, VoCs007";
 
-    public int quota = 0;
     public BotikiConfig Config { get; set; } = new BotikiConfig();
 
     public void OnConfigParsed(BotikiConfig config)
@@ -143,6 +143,12 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public bool isNeedKick = true;
     public bool isFirstPlayer = true;
 
+    public int quota = 0;   
+    public int Quota(BotikiConfig config)
+    {
+        quota = config.BotCount; 
+        return quota;
+    }
     public void log(string error)
     {
         if (Config.DebugMode)
@@ -241,6 +247,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         // return (T, CT, SPEC, players.Exists(player => player.IsValid && player.IsBot && !player.IsHLTV), botTeam, kickbotT, kickbotCT);
     }
 
+
+
     [ConsoleCommand("bothp")]
     [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
     public void OnCommandSBotHp(CCSPlayerController? controller, CommandInfo command)
@@ -291,8 +299,6 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        
-
         if (quota > Config.BotCount)
             quota = Config.BotCount;
 
@@ -319,7 +325,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         switch (Config.PluginMode)
         {
-            case 1:
+            case 1: 
 
                 log("------ case 1(fill)");
 
