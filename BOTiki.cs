@@ -115,10 +115,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 SetCVAR("bot_join_after_player", false);
         }
 
-        //RegisterEventHandler<EventRoundStart>(OnRoundStart);
-        //RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
-        //RegisterEventHandler<EventSwitchTeam>(OnSwitchTeam);
-        //RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        
 
         Console.WriteLine($"====================");
         Console.WriteLine();
@@ -143,12 +140,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public bool isNeedKick = true;
     public bool isFirstPlayer = true;
 
-    public int quota = 0;   
-    public int Quota(BotikiConfig config)
-    {
-        quota = config.BotCount; 
-        return quota;
-    }
+    public int quota;
+
     public void log(string error)
     {
         if (Config.DebugMode)
