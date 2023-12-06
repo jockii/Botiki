@@ -39,6 +39,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
     public override string ModuleAuthor => "jockii, VoCs007";
 
+    public int quota = 0;
     public BotikiConfig Config { get; set; } = new BotikiConfig();
 
     public void OnConfigParsed(BotikiConfig config)
@@ -142,13 +143,6 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public bool isNeedKick = true;
     public bool isFirstPlayer = true;
 
-    public int quota; /// ??????????????????????????????
-
-    public void SetBotCount()
-    {
-        int quota = Config.BotCount;
-        Server.ExecuteCommand($"bot_quota {quota}");
-    }
     public void log(string error)
     {
         if (Config.DebugMode)
@@ -296,16 +290,17 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         (int T, int Tb, int Th, int CT, int CTb, int CTh, int SPEC, bool IsBotExists, int? botTeam, string kickbotT, string kickbotCT) = PlayersData(players);
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
+
         
 
-        if (Quota > Config.BotCount)
-            Quota = Config.BotCount;
+        if (quota > Config.BotCount)
+            quota = Config.BotCount;
 
         if (T + CT > Config.BotCount)
         {
             string _bot_count = Config.BotCount.ToString();
             SendConsoleCommand($"bot_quota {_bot_count}");
-            Quota = Config.BotCount;
+            quota = Config.BotCount;
         }
 
         //set bot hp
@@ -335,7 +330,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 }
 
                 //      need kick bot
-                if (Tb + CTb > Quota)
+                if (Tb + CTb > quota)
                 {
                     log("------ if #2");
                     if (Tb > CTb)
@@ -362,7 +357,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 }
 
                 //      need add bot
-                if (Tb + CTb < Quota)
+                if (Tb + CTb < quota)
                 {
                     log("------ if #3");
                     if (Tb > CTb)
@@ -384,7 +379,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         }
                     }
                 }
-                if (Th + CTh == 1 && Tb + CTb == Quota)
+                if (Th + CTh == 1 && Tb + CTb == quota)
                 {
                     log("------ if #4");
 
@@ -451,6 +446,8 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
         
+
+
         switch (Config.PluginMode)
         {
             case 1:
@@ -490,8 +487,6 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        Quota++;
-
         log("------ @event Switch Team");
 
         switch (Config.PluginMode)
@@ -504,7 +499,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 if (controller!.TeamChanged && controller.TeamNum == 1)
                 {
-                    Quota++;
+                    quota++;
                     log("------ if #1 go to SPEC");
                 }
 
@@ -579,11 +574,11 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        Quota++;
-
         switch (Config.PluginMode)
         {
             case 1:
+
+                quota++;
 
                 //if (T + CT < Config.BotCount)
                 //    SendConsoleCommand(T > CT ? BOT_ADD_CT : BOT_ADD_T);
@@ -615,13 +610,13 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        Quota--;
 
         if (isFirstPlayer)
         {
-            int quota = Config.BotCount;
-            SendConsoleCommand("bot_quota_mode fill");
-            SendConsoleCommand("bot_quota " + quota.ToString());
+            //int quota = Config.BotCount;
+            //SendConsoleCommand("bot_quota_mode fill");
+            //SendConsoleCommand("bot_quota " + quota.ToString());
+            quota = Config.BotCount;
 
             isFirstPlayer = false;
         }
@@ -630,6 +625,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         {
             case 1:
 
+                quota--;
 
                 break;
 
