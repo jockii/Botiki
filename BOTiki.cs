@@ -142,12 +142,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public bool isNeedKick = true;
     public bool isFirstPlayer = true;
 
-
-    public int Quota
-    {
-        get { return Quota; }
-        set { Config.BotCount = value; }
-    }
+    public int quota; /// ??????????????????????????????
 
     public void SetBotCount()
     {
