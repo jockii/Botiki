@@ -7,12 +7,6 @@ using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
@@ -148,7 +142,12 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
     public bool isNeedKick = true;
     public bool isFirstPlayer = true;
 
-    static int quota = Config.BotCount; //  ????
+
+    public int Quota
+    {
+        get { return Quota; }
+        set { Config.BotCount = value; }
+    }
 
     public void SetBotCount()
     {
@@ -304,14 +303,14 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
         
 
-        if (Kvota > Config.BotCount)
-            Kvota = Config.BotCount;
+        if (Quota > Config.BotCount)
+            Quota = Config.BotCount;
 
         if (T + CT > Config.BotCount)
         {
             string _bot_count = Config.BotCount.ToString();
             SendConsoleCommand($"bot_quota {_bot_count}");
-            Kvota = Config.BotCount;
+            Quota = Config.BotCount;
         }
 
         //set bot hp
@@ -341,7 +340,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 }
 
                 //      need kick bot
-                if (Tb + CTb > Kvota)
+                if (Tb + CTb > Quota)
                 {
                     log("------ if #2");
                     if (Tb > CTb)
@@ -368,7 +367,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                 }
 
                 //      need add bot
-                if (Tb + CTb < Kvota)
+                if (Tb + CTb < Quota)
                 {
                     log("------ if #3");
                     if (Tb > CTb)
@@ -390,7 +389,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
                         }
                     }
                 }
-                if (Th + CTh == 1 && Tb + CTb == Kvota)
+                if (Th + CTh == 1 && Tb + CTb == Quota)
                 {
                     log("------ if #4");
 
@@ -496,7 +495,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        
+        Quota++;
 
         log("------ @event Switch Team");
 
@@ -510,7 +509,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
                 if (controller!.TeamChanged && controller.TeamNum == 1)
                 {
-                    Kvota++;
+                    Quota++;
                     log("------ if #1 go to SPEC");
                 }
 
@@ -585,7 +584,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        Kvota++;
+        Quota++;
 
         switch (Config.PluginMode)
         {
@@ -621,7 +620,7 @@ public class Botiki : BasePlugin, IPluginConfig<BotikiConfig>
 
         CCSPlayerController controller = Utilities.GetPlayers().Find(pl => pl.IsValid && !pl.IsBot && !pl.IsHLTV)!;
 
-        Kvota--;
+        Quota--;
 
         if (isFirstPlayer)
         {
