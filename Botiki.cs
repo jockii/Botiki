@@ -202,6 +202,18 @@ public class Botiki : BasePlugin
     {
         var configPath = Path.Join(ModuleDirectory, "Config.json");
         config = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath))!;
+
+        string bc = $"bot_quota {config.BotCount}";
+        if (config.PluginMode == 1)
+        {
+            SendConsoleCommand("bot_quota_mode fill");
+            SendConsoleCommand(bc);
+        }
+        if (config.PluginMode == 2)
+        {
+            SendConsoleCommand("bot_quota_mode normal");
+            SendConsoleCommand("bot_quota 1");
+        }
     }
     public void ChangePlayerTeamSide(CsTeam teamName)
     {
@@ -229,7 +241,7 @@ public class Botiki : BasePlugin
             }
         }
     }
-    public void FillKicker(int T, int CT, int Tb, int Th, int CTb, int CTh)
+    public void FillKicker(int T, int CT, int Tb, int Th, int CTb, int CTh, int? botTeam)
     {
         //      need kick bot
         if (Th + CTh >= config.PlayersCountForKickBots)
@@ -237,7 +249,7 @@ public class Botiki : BasePlugin
             SendConsoleCommand(BOT_KICK);
         }
 
-        if (Tb + CTb > config.BotCount)
+        if (T + CT > config.BotCount)
         {
             if (Tb > CTb)
             {
@@ -255,34 +267,32 @@ public class Botiki : BasePlugin
                 }
             }
         }
+    }
+    public void FillMode(List<CCSPlayerController> players)
+    {
+        (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
 
         if (Th + CTh == 1 && Tb + CTb == config.BotCount)
         {
-            if (T > CT)
+            if (botTeam == null) return;
+
+            if (T > CT && botTeam == 2)
             {
                 // try $"bot_kick {.PlayerName}" 
                 string botName = Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).PlayerName;
                 SendConsoleCommand($"bot_kick {botName}");
                 SendConsoleCommand(BOT_ADD_CT);
             }
-            if (CT > T)
+            if (CT > T && botTeam == 3)
             {
                 string botName = Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).PlayerName;
                 SendConsoleCommand($"bot_kick {botName}");
                 SendConsoleCommand(BOT_ADD_T);
             }
         }
-    }
-    public void FillMode(List<CCSPlayerController> players)
-    {
-        (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
-
-        if (T + CT > config.BotCount)
-        {
-            FillKicker(T, CT, Tb, Th, CTb, CTh);
-        }
         else
         {
+            FillKicker(T, CT, Tb, Th, CTb, CTh, botTeam);
             FillAdder(Tb, CTb);
         }
         
