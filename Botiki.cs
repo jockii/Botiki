@@ -30,8 +30,8 @@ public class Config
 public class Botiki : BasePlugin
 {
     public override string ModuleName => "Botiki";
-    public override string ModuleVersion => "v1.7.0";
-    public override string ModuleAuthor => "jackson tougher, VoCs";
+    public override string ModuleVersion => "v1.9.0";
+    public override string ModuleAuthor => "jockii | Thanks: VoCs007";
     public Config config = new Config();
     public override void Load(bool hotReload)
     {
@@ -53,11 +53,7 @@ public class Botiki : BasePlugin
     public const int MAX_BOT_HP = 999999;
     public bool IsNeedKick = true;
 
-    public int Quota
-    {
-        get { return Quota = config.BotCount; }
-        set { Quota = value; }
-    }
+    public int quota = 0;
 
     (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) GetPlayersCount(List<CCSPlayerController> players)
     {
@@ -203,6 +199,7 @@ public class Botiki : BasePlugin
             config.DebugMode = 0;
             File.WriteAllText(configPath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
         }
+        quota = config.BotCount;
     }
     public void LoadConfig()
     {
@@ -214,6 +211,7 @@ public class Botiki : BasePlugin
         {
             SendConsoleCommand("bot_quota_mode fill");
             SendConsoleCommand(bc);
+            quota = config.BotCount;
         }
         if (config.PluginMode == 2)
         {
@@ -229,7 +227,7 @@ public class Botiki : BasePlugin
     public void FillAdder(int Tb, int CTb)
     {
         //      need add bot
-        if (Tb + CTb < Quota)
+        if (Tb + CTb < quota)
         {
             if (Tb > CTb)
             {
@@ -255,7 +253,7 @@ public class Botiki : BasePlugin
             SendConsoleCommand(BOT_KICK);
         }
 
-        if (T + CT > Quota)
+        if (T + CT > quota)
         {
             if (Tb > CTb)
             {
@@ -278,21 +276,19 @@ public class Botiki : BasePlugin
     {
         (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
 
-        if (Th + CTh == 1 && Tb + CTb == Quota)
+        if (Th + CTh == 1 && Tb + CTb == quota)
         {
             if (botTeam == null) return;
 
-            if (T > CT && botTeam == 2)
+            if (T > CT)
             {
                 // try $"bot_kick {.PlayerName}" 
-                string botName = Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).PlayerName;
-                SendConsoleCommand($"bot_kick {botName}");
+                SendConsoleCommand($"bot_kick {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 2).PlayerName}");
                 SendConsoleCommand(BOT_ADD_CT);
             }
-            if (CT > T && botTeam == 3)
+            if (CT > T)
             {
-                string botName = Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).PlayerName;
-                SendConsoleCommand($"bot_kick {botName}");
+                SendConsoleCommand($"bot_kick {Utilities.GetPlayers().First(pl => pl.IsValid && pl.IsBot && !pl.IsHLTV && pl.TeamNum == 3).PlayerName}");
                 SendConsoleCommand(BOT_ADD_T);
             }
         }
@@ -405,10 +401,6 @@ public class Botiki : BasePlugin
         else
             controller.PrintToChat($" {ChatColors.Red}You are not Admin!!!");
     }
-    public void SetBotHp(List<CCSPlayerController> playersList)
-    {
-        
-    }
 
     [GameEventHandler(mode: HookMode.Post)]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
@@ -471,7 +463,7 @@ public class Botiki : BasePlugin
                 if (pl == null) return HookResult.Continue;
 
                 if (pl.TeamChanged && pl.TeamNum == 1)
-                    Quota++;
+                    quota++;
 
                 break;
             case 2:
@@ -502,7 +494,7 @@ public class Botiki : BasePlugin
     [GameEventHandler(mode: HookMode.Post)]
     public HookResult OnPlayerConnect(EventPlayerConnectFull @event, GameEventInfo info)
     {
-        Quota--;
+        quota--;
 
         return HookResult.Continue;
     }
@@ -510,7 +502,7 @@ public class Botiki : BasePlugin
     [GameEventHandler(mode: HookMode.Post)]
     public HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
     {
-        Quota++;
+        quota++;
 
         return HookResult.Continue;
     }
