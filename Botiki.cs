@@ -53,6 +53,12 @@ public class Botiki : BasePlugin
     public const int MAX_BOT_HP = 999999;
     public bool IsNeedKick = true;
 
+    public int Quota
+    {
+        get { return Quota = config.BotCount; }
+        set { Quota = value; }
+    }
+
     (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) GetPlayersCount(List<CCSPlayerController> players)
     {
         List<CCSPlayerController> realPlayers = players.FindAll(player => player.IsValid && !player.IsBot);
@@ -223,7 +229,7 @@ public class Botiki : BasePlugin
     public void FillAdder(int Tb, int CTb)
     {
         //      need add bot
-        if (Tb + CTb < config.BotCount)
+        if (Tb + CTb < Quota)
         {
             if (Tb > CTb)
             {
@@ -249,7 +255,7 @@ public class Botiki : BasePlugin
             SendConsoleCommand(BOT_KICK);
         }
 
-        if (T + CT > config.BotCount)
+        if (T + CT > Quota)
         {
             if (Tb > CTb)
             {
@@ -272,7 +278,7 @@ public class Botiki : BasePlugin
     {
         (int T, int Th, int Tb, int CT, int CTh, int CTb, int SPEC, bool isBotExists, int? botTeam) = GetPlayersCount(Utilities.GetPlayers());
 
-        if (Th + CTh == 1 && Tb + CTb == config.BotCount)
+        if (Th + CTh == 1 && Tb + CTb == Quota)
         {
             if (botTeam == null) return;
 
@@ -455,10 +461,18 @@ public class Botiki : BasePlugin
         //    IsNeedKick = false;
         //}
 
+        CCSPlayerController pl = @event.As<CCSPlayerController>();
+
         switch (config.PluginMode)
         {
             case 1:
                 // fill
+
+                if (pl == null) return HookResult.Continue;
+
+                if (pl.TeamChanged && pl.TeamNum == 1)
+                    Quota++;
+
                 break;
             case 2:
                 // balanced
@@ -481,6 +495,22 @@ public class Botiki : BasePlugin
                 // error console message
                 break;
         }
+
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler(mode: HookMode.Post)]
+    public HookResult OnPlayerConnect(EventPlayerConnectFull @event, GameEventInfo info)
+    {
+        Quota--;
+
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler(mode: HookMode.Post)]
+    public HookResult OnPlayerDisconnect(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        Quota++;
 
         return HookResult.Continue;
     }
